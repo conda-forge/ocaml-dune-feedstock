@@ -1,5 +1,5 @@
 context:
-  build_number: 0
+  build_number: 1
   name: ocaml-dune
   version: "3.21.0"
 
@@ -39,6 +39,9 @@ requirements:
     - ${{ m2 }}make
     - ${{ m2 }}sed
     - ocaml ==5.3.0 *_10
+    - if: build_platform != target_platform
+      then:
+        - ocaml-dune
     - if: unix
       then:
         - file

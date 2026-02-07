@@ -28,129 +28,62 @@ fail() {
 
 # Get compiler path based on type and toolchain
 get_compiler() {
-  local compiler_type="${1}"  # "c" or "cxx"
-  local toolchain_prefix="${2:-}"
+  local toolchain_prefix="${1:-}"
 
-  local c_compiler cxx_compiler
+  local c_compiler
   if [[ -n "${toolchain_prefix}" ]]; then
     if [[ "${toolchain_prefix}" == *"apple-darwin"* ]]; then
       c_compiler="${toolchain_prefix}-clang"
-      cxx_compiler="${toolchain_prefix}-clang++"
     else
       c_compiler="${toolchain_prefix}-gcc"
-      cxx_compiler="${toolchain_prefix}-g++"
     fi
   else
     if is_macos; then
       c_compiler="clang"
-      cxx_compiler="clang++"
     else
       c_compiler="gcc"
-      cxx_compiler="g++"
     fi
   fi
 
-  if [[ "${compiler_type}" == "c" ]]; then
-    echo "${c_compiler}"
-  else
-    echo "${cxx_compiler}"
-  fi
+  echo "${c_compiler}"
 }
 
-get_target_c_compiler() { get_compiler "c" "${CONDA_TOOLCHAIN_HOST:-}"; }
-get_target_cxx_compiler() { get_compiler "cxx" "${CONDA_TOOLCHAIN_HOST:-}"; }
+get_target_c_compiler() { get_compiler "${CONDA_TOOLCHAIN_HOST:-}"; }
+
+# Clean up any previous cross-compilation build artifacts
+clean_cross_build() {
+  rm -rf _boot _build _build_install_native _native_duneboot _dune.install.saved
+}
 
 # ==============================================================================
 # CROSS-COMPILATION SETUP FUNCTIONS
 # ==============================================================================
 
-swap_ocaml_compilers() {
-  echo "  Swapping OCaml compilers to cross-compilers..."
-  pushd "${BUILD_PREFIX}/bin" > /dev/null
-    for tool in ocamlc ocamldep ocamlopt ocamlobjinfo; do
-      if [[ -f "${tool}" ]] || [[ -L "${tool}" ]]; then
-        mv "${tool}" "${tool}.build"
-        ln -sf "${CONDA_TOOLCHAIN_HOST}-${tool}" "${tool}"
-      fi
-      if [[ -f "${tool}.opt" ]] || [[ -L "${tool}.opt" ]]; then
-        mv "${tool}.opt" "${tool}.opt.build"
-        ln -sf "${CONDA_TOOLCHAIN_HOST}-${tool}.opt" "${tool}.opt"
-      fi
-    done
-  popd > /dev/null
-}
+# Manual installation from _build/install/default (for bootstrap flow)
+install_dune_from_build_artifacts() {
+  local install_prefix="${1}"
+  local src="_build/install/default"
 
-setup_cross_c_compilers() {
-  echo "  Setting up C/C++ cross-compiler symlinks..."
-  local target_cc="$(get_target_c_compiler)"
-  local target_cxx="$(get_target_cxx_compiler)"
+  echo "=== Manual installation from build artifacts ==="
 
-  pushd "${BUILD_PREFIX}/bin" > /dev/null
-    for tool in gcc cc; do
-      if [[ -f "${tool}" ]] || [[ -L "${tool}" ]]; then
-        mv "${tool}" "${tool}.build" 2>/dev/null || true
-      fi
-      ln -sf "${target_cc}" "${tool}"
-    done
-    for tool in g++ c++; do
-      if [[ -f "${tool}" ]] || [[ -L "${tool}" ]]; then
-        mv "${tool}" "${tool}.build" 2>/dev/null || true
-      fi
-      ln -sf "${target_cxx}" "${tool}"
-    done
-  popd > /dev/null
-}
+  # bin
+  install -Dm755 "${src}/bin/dune" "${install_prefix}/bin/dune"
 
-configure_cross_environment() {
-  echo "  Configuring cross-compilation environment variables..."
-  export CONDA_OCAML_CC="$(get_target_c_compiler)"
-  if is_macos; then
-    export CONDA_OCAML_MKEXE="${CONDA_OCAML_CC}"
-    export CONDA_OCAML_MKDLL="${CONDA_OCAML_CC} -dynamiclib"
-  else
-    export CONDA_OCAML_MKEXE="${CONDA_OCAML_CC} -Wl,-E -ldl"
-    export CONDA_OCAML_MKDLL="${CONDA_OCAML_CC} -shared"
-  fi
-  export CONDA_OCAML_AR="${CONDA_TOOLCHAIN_HOST}-ar"
-  export CONDA_OCAML_AS="${CONDA_TOOLCHAIN_HOST}-as"
-  export CONDA_OCAML_LD="${CONDA_TOOLCHAIN_HOST}-ld"
-  export QEMU_LD_PREFIX="${BUILD_PREFIX}/${CONDA_TOOLCHAIN_HOST}/sysroot"
+  # lib
+  mkdir -p "${install_prefix}/lib/dune"
+  cp -v "${src}/lib/dune/"* "${install_prefix}/lib/dune/"
 
-  local cross_ocaml_lib="${BUILD_PREFIX}/lib/ocaml-cross-compilers/${CONDA_TOOLCHAIN_HOST}/lib/ocaml"
-  if [[ -d "${cross_ocaml_lib}" ]]; then
-    export OCAMLLIB="${cross_ocaml_lib}"
-    export LIBRARY_PATH="${cross_ocaml_lib}:${PREFIX}/lib:${LIBRARY_PATH:-}"
-    export LDFLAGS="-L${cross_ocaml_lib} -L${PREFIX}/lib ${LDFLAGS:-}"
-  fi
-}
+  # doc
+  mkdir -p "${install_prefix}/doc/dune/odoc-pages"
+  cp -v "${src}/doc/dune/"*.md "${install_prefix}/doc/dune/" 2>/dev/null || true
+  cp -v "${src}/doc/dune/odoc-pages/"* "${install_prefix}/doc/dune/odoc-pages/" 2>/dev/null || true
 
-create_macos_ocamlmklib_wrapper() {
-  echo "  Creating macOS ocamlmklib wrapper..."
-  local real_ocamlmklib="${BUILD_PREFIX}/bin/ocamlmklib"
+  # man pages
+  mkdir -p "${install_prefix}/man/man1" "${install_prefix}/man/man5"
+  cp -v "${src}/man/man1/"* "${install_prefix}/man/man1/"
+  cp -v "${src}/man/man5/"* "${install_prefix}/man/man5/"
 
-  if [[ -f "${real_ocamlmklib}" ]] && [[ ! -f "${real_ocamlmklib}.real" ]]; then
-    mv "${real_ocamlmklib}" "${real_ocamlmklib}.real"
-    cat > "${real_ocamlmklib}" << 'WRAPPER_EOF'
-#!/bin/bash
-exec "${0}.real" -ldopt "-Wl,-undefined,dynamic_lookup" "$@"
-WRAPPER_EOF
-    chmod +x "${real_ocamlmklib}"
-  fi
-}
-
-patch_ocaml_makefile_config() {
-  echo "  Patching OCaml Makefile.config for target architecture..."
-  local ocaml_lib=$(ocamlc -where)
-  local ocaml_config="${ocaml_lib}/Makefile.config"
-
-  if [[ -f "${ocaml_config}" ]]; then
-    cp "${ocaml_config}" "${ocaml_config}.bak"
-    local target_cc="$(get_target_c_compiler)"
-    sed -i "s|^CC=.*|CC=${target_cc}|" "${ocaml_config}"
-    sed -i "s|^NATIVE_C_COMPILER=.*|NATIVE_C_COMPILER=${target_cc}|" "${ocaml_config}"
-    sed -i "s|^BYTECODE_C_COMPILER=.*|BYTECODE_C_COMPILER=${target_cc}|" "${ocaml_config}"
-    sed -i "s|^PACKLD=.*|PACKLD=${CONDA_TOOLCHAIN_HOST}-ld -r -o \$(EMPTY)|" "${ocaml_config}"
-    sed -i "s|^ASM=.*|ASM=${CONDA_TOOLCHAIN_HOST}-as|" "${ocaml_config}"
-    sed -i "s|^TOOLPREF=.*|TOOLPREF=${CONDA_TOOLCHAIN_HOST}-|" "${ocaml_config}"
-  fi
+  # emacs
+  mkdir -p "${install_prefix}/share/emacs/site-lisp"
+  cp -v "${src}/share/emacs/site-lisp/"*.el "${install_prefix}/share/emacs/site-lisp/"
 }
