@@ -8,7 +8,7 @@ build_native_bootstrap() {
   echo "=== Phase 2: Building bootstrap tool ==="
 
   # Cross-linker looks in BUILD_PREFIX by default, but target libs are in PREFIX
-  # ocamlc uses OCAMLLIB to find runtime libs, and -ccopt to pass linker flags
+  # ocamlc uses OCAMLLIB to find runtime libs
   local target_lib="${PREFIX}/lib"
   local target_ocaml_lib="${PREFIX}/lib/ocaml"
 
@@ -19,17 +19,29 @@ build_native_bootstrap() {
   # Point OCAMLLIB to target OCaml runtime
   export OCAMLLIB="${target_ocaml_lib}"
 
-  echo "  OCAMLLIB: ${OCAMLLIB}"
+  # Set LIBRARY_PATH so linker finds target libs
+  # This works for both gcc (Linux) and clang (macOS)
+  export LIBRARY_PATH="${target_ocaml_lib}:${target_lib}:${LIBRARY_PATH:-}"
 
-  # Build bootstrap with explicit linker paths via -ccopt
-  # -ccopt passes flags to the C compiler/linker
-  # -rpath embeds library search path so it finds libs at runtime
-  ocamlc -output-complete-exe -intf-suffix .dummy -g \
-    -ccopt "-L${target_ocaml_lib}" \
-    -ccopt "-L${target_lib}" \
-    -ccopt "-Wl,-rpath,${target_lib}" \
-    -o ./_native_duneboot \
-    -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
+  echo "  OCAMLLIB: ${OCAMLLIB}"
+  echo "  LIBRARY_PATH: ${LIBRARY_PATH}"
+
+  # Build bootstrap
+  # LIBRARY_PATH ensures linker finds the right libs (works on both Linux and macOS)
+  if is_macos; then
+    # macOS/clang: LIBRARY_PATH handles lib search, no rpath needed for bootstrap
+    ocamlc -output-complete-exe -intf-suffix .dummy -g \
+      -o ./_native_duneboot \
+      -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
+  else
+    # Linux/gcc: use -Wl, for linker flags including rpath
+    ocamlc -output-complete-exe -intf-suffix .dummy -g \
+      -ccopt "-L${target_ocaml_lib}" \
+      -ccopt "-L${target_lib}" \
+      -ccopt "-Wl,-rpath,${target_lib}" \
+      -o ./_native_duneboot \
+      -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
+  fi
 }
 
 swap_ocaml_compilers() {
