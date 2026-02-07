@@ -16,9 +16,15 @@ source "${RECIPE_DIR}/building/build_functions.sh"
 
 cd "${SRC_DIR}"
 
-# macOS: Set library path for zstd
+# Cross-compilation: Ensure linker finds target libs (PREFIX) before build libs (BUILD_PREFIX)
+# LIBRARY_PATH affects clang/ld64 at link time (both macOS and Linux)
+if is_cross_compile; then
+  export LIBRARY_PATH="${PREFIX}/lib:${BUILD_PREFIX}/lib:${LIBRARY_PATH:-}"
+fi
+
+# macOS: Set runtime library path for zstd (runtime loading, not linking)
 if is_macos; then
-  export DYLD_FALLBACK_LIBRARY_PATH="${BUILD_PREFIX}/lib:${PREFIX}/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+  export DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib:${BUILD_PREFIX}/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
 fi
 
 # Set install prefix
