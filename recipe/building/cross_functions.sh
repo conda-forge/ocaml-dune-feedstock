@@ -30,7 +30,7 @@ build_native_bootstrap() {
   ocamlc -output-complete-exe -intf-suffix .dummy -g \
     -cclib "-L${target_lib}" \
     -cclib "-L${target_ocaml_lib}" \
-    -cclib "-rpath ${target_lib}" \
+    -cclib "-Wl,-rpath,${target_lib}" \
     -o ./_native_duneboot \
     -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
 }
