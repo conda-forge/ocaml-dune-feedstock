@@ -27,12 +27,21 @@ build_native_bootstrap() {
   echo "  LIBRARY_PATH: ${LIBRARY_PATH}"
 
   # Build bootstrap
-  ocamlc -output-complete-exe -intf-suffix .dummy -g \
-    -cclib "-L${target_lib}" \
-    -cclib "-L${target_ocaml_lib}" \
-    -cclib "-Wl,-rpath,${target_lib}" \
-    -o ./_native_duneboot \
-    -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
+  if is_macos; then
+    ocamlc -verbose -output-complete-exe -intf-suffix .dummy -g \
+      -cclib "${target_lib}/libzstd.dylib" \
+      -cclib "-L${target_ocaml_lib}" \
+      -cclib "-Wl,-rpath,${target_lib}" \
+      -o ./_native_duneboot \
+      -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
+  else
+    ocamlc -output-complete-exe -intf-suffix .dummy -g \
+      -cclib "-L${target_lib}" \
+      -cclib "-L${target_ocaml_lib}" \
+      -cclib "-Wl,-rpath,${target_lib}" \
+      -o ./_native_duneboot \
+      -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
+  fi
 }
 
 swap_ocaml_compilers() {
