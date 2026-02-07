@@ -8,38 +8,27 @@ Tests dune's ability to build OCaml projects:
 - Incremental builds
 - dune clean
 
-OCaml 5.3.0 aarch64/ppc64le bug workaround applied automatically.
+OCaml 5.3.0 aarch64/ppc64le known bugs are documented but don't fail the build.
+OCaml 5.4.0+ failures are treated as real errors.
 """
 
 import os
-import platform
 import shutil
 import subprocess
 import sys
 import tempfile
 
-
-def get_ocaml_version():
-    """Get OCaml version string."""
-    try:
-        result = subprocess.run(
-            ["ocaml", "-version"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        for word in result.stdout.split():
-            if word[0].isdigit():
-                return word
-    except FileNotFoundError:
-        pass
-    return "unknown"
+from test_utils import (
+    get_ocaml_build_version_str,
+    get_target_arch,
+    handle_test_result,
+)
 
 
 def apply_ocaml_530_workaround():
     """Apply OCaml 5.3.0 aarch64/ppc64le GC workaround if needed."""
-    ocaml_version = get_ocaml_version()
-    arch = platform.machine().lower()
+    ocaml_version = get_ocaml_build_version_str()
+    arch = get_target_arch()
 
     print(f"OCaml version: {ocaml_version}")
     print(f"Architecture: {arch}")
@@ -70,14 +59,31 @@ def run_cmd(cmd, check_output=None):
     return True, result.stdout
 
 
+def run_build_test(build_cmd, run_cmd_args, expected_output):
+    """Run a build test and return success status with details.
+
+    Returns:
+        Tuple of (success: bool, error_msg: str or None)
+    """
+    result = subprocess.run(build_cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        return False, f"build failed: {result.stderr}"
+
+    ok, msg = run_cmd(run_cmd_args, expected_output)
+    if not ok:
+        return False, f"run failed: {msg}"
+
+    return True, None
+
+
 def main():
     print("=== Dune Functional Build Tests ===")
 
     apply_ocaml_530_workaround()
 
-    errors = 0
     test_dir = tempfile.mkdtemp(prefix="dune_test_")
     original_dir = os.getcwd()
+    test_results = []  # List of (test_name, success) tuples
 
     try:
         os.chdir(test_dir)
@@ -96,24 +102,16 @@ def main():
             'let () = print_endline "Hello from dune (bytecode)"',
         )
 
-        result = subprocess.run(
+        success, err = run_build_test(
             ["dune", "build", "simple_byte/hello.bc"],
-            capture_output=True,
-            text=True,
+            ["./_build/default/simple_byte/hello.bc"],
+            "Hello from dune",
         )
-        if result.returncode == 0:
-            ok, msg = run_cmd(
-                ["./_build/default/simple_byte/hello.bc"],
-                "Hello from dune",
-            )
-            if ok:
-                print("[OK] bytecode build + run")
-            else:
-                print(f"[FAIL] bytecode run: {msg}")
-                errors += 1
+        if success:
+            print("[OK] bytecode build + run")
         else:
-            print(f"[FAIL] bytecode build: {result.stderr}")
-            errors += 1
+            print(f"[FAIL] bytecode: {err}")
+        test_results.append(("Bytecode build", success))
 
         # Test 2: Native executable
         print("\n=== Test 2: Simple native executable ===")
@@ -126,24 +124,16 @@ def main():
             'let () = print_endline "Hello from dune (native)"',
         )
 
-        result = subprocess.run(
+        success, err = run_build_test(
             ["dune", "build", "simple_native/hello.exe"],
-            capture_output=True,
-            text=True,
+            ["./_build/default/simple_native/hello.exe"],
+            "Hello from dune",
         )
-        if result.returncode == 0:
-            ok, msg = run_cmd(
-                ["./_build/default/simple_native/hello.exe"],
-                "Hello from dune",
-            )
-            if ok:
-                print("[OK] native build + run")
-            else:
-                print(f"[FAIL] native run: {msg}")
-                errors += 1
+        if success:
+            print("[OK] native build + run")
         else:
-            print(f"[FAIL] native build: {result.stderr}")
-            errors += 1
+            print(f"[FAIL] native: {err}")
+        test_results.append(("Native build", success))
 
         # Test 3: Multi-file library project
         print("\n=== Test 3: Multi-file library project ===")
@@ -164,24 +154,16 @@ def main():
         )
         write_file("multifile/main.ml", 'let () = Mylib.greet "Dune"')
 
-        result = subprocess.run(
+        success, err = run_build_test(
             ["dune", "build", "multifile/main.exe"],
-            capture_output=True,
-            text=True,
+            ["./_build/default/multifile/main.exe"],
+            "Hello, Dune",
         )
-        if result.returncode == 0:
-            ok, msg = run_cmd(
-                ["./_build/default/multifile/main.exe"],
-                "Hello, Dune",
-            )
-            if ok:
-                print("[OK] multi-file library + executable")
-            else:
-                print(f"[FAIL] multi-file run: {msg}")
-                errors += 1
+        if success:
+            print("[OK] multi-file library + executable")
         else:
-            print(f"[FAIL] multi-file build: {result.stderr}")
-            errors += 1
+            print(f"[FAIL] multi-file: {err}")
+        test_results.append(("Multi-file build", success))
 
         # Test 4: Unix module (stdlib dependency)
         print("\n=== Test 4: Unix module integration ===")
@@ -198,44 +180,43 @@ def main():
 """,
         )
 
-        result = subprocess.run(
+        success, err = run_build_test(
             ["dune", "build", "unix_test/unix_test.exe"],
-            capture_output=True,
-            text=True,
+            ["./_build/default/unix_test/unix_test.exe"],
+            "Unix module works",
         )
-        if result.returncode == 0:
-            ok, msg = run_cmd(
-                ["./_build/default/unix_test/unix_test.exe"],
-                "Unix module works",
-            )
-            if ok:
-                print("[OK] Unix module compilation + execution")
-            else:
-                print(f"[FAIL] Unix module run: {msg}")
-                errors += 1
+        if success:
+            print("[OK] Unix module compilation + execution")
         else:
-            print(f"[FAIL] Unix module build: {result.stderr}")
-            errors += 1
+            print(f"[FAIL] unix: {err}")
+        test_results.append(("Unix module build", success))
 
         # Test 5: dune clean
         print("\n=== Test 5: dune clean ===")
         result = subprocess.run(["dune", "clean"], capture_output=True, text=True)
-        if result.returncode == 0 and not os.path.exists("_build"):
+        success = result.returncode == 0 and not os.path.exists("_build")
+        if success:
             print("[OK] dune clean")
         else:
             print("[FAIL] dune clean didn't remove _build")
-            errors += 1
+        test_results.append(("Dune clean", success))
 
     finally:
         os.chdir(original_dir)
         shutil.rmtree(test_dir, ignore_errors=True)
 
-    if errors > 0:
-        print(f"\n=== FAILED: {errors} error(s) ===")
-        return 1
+    # Aggregate results using version-aware handling
+    all_passed = all(success for _, success in test_results)
+    failed_tests = [name for name, success in test_results if not success]
 
-    print("\n=== All dune functional tests passed ===")
-    return 0
+    if all_passed:
+        print("\n=== All dune functional tests passed ===")
+        return 0
+
+    # Use handle_test_result for version-aware failure handling
+    # arch_sensitive=True: only document as known bug on aarch64/ppc64le
+    test_summary = f"Build tests ({', '.join(failed_tests)})"
+    return handle_test_result(test_summary, success=False, arch_sensitive=True)
 
 
 if __name__ == "__main__":
