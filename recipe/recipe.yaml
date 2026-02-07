@@ -38,9 +38,9 @@ requirements:
     - ${{ m2 }}grep
     - ${{ m2 }}make
     - ${{ m2 }}sed
-    - ocaml ==5.3.0 *_10
     - if: build_platform != target_platform
       then:
+        - ocaml >=5.3.0 *_10
         - ocaml-dune
     - if: unix
       then:
@@ -49,10 +49,11 @@ requirements:
         - ${{ m2 }}coreutils
         - ${{ m2 }}diffutils
         - ${{ m2 }}which
-  run:
-    - if: aarch64 or ppc64le
-      then:
-        - zstd
+  host:
+    - ocaml >=5.3.0 *_10
+  # With 5.4.0 _1 we will have a ocaml-compiler metapackage
+  # run:
+  #   - ocaml-compiler
   ignore_run_exports:
     by_name:
       - ocaml
