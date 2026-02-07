@@ -27,17 +27,20 @@ build_native_bootstrap() {
   echo "  LIBRARY_PATH: ${LIBRARY_PATH}"
 
   # Build bootstrap
-  # LIBRARY_PATH ensures linker finds the right libs (works on both Linux and macOS)
+  # ocamlc embeds -L flags from its configuration that override LIBRARY_PATH
+  # We must pass explicit -L flags via -ccopt to search PREFIX before BUILD_PREFIX
   if is_macos; then
-    # macOS/clang: LIBRARY_PATH handles lib search, no rpath needed for bootstrap
+    # macOS/clang: explicit -L flags to find target libzstd before build libzstd
     ocamlc -output-complete-exe -intf-suffix .dummy -g \
+      -ccopt "-L${target_lib}" \
+      -ccopt "-L${target_ocaml_lib}" \
       -o ./_native_duneboot \
       -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
   else
-    # Linux/gcc: use -Wl, for linker flags including rpath
+    # Linux/gcc: explicit -L flags plus rpath for runtime
     ocamlc -output-complete-exe -intf-suffix .dummy -g \
-      -ccopt "-L${target_ocaml_lib}" \
       -ccopt "-L${target_lib}" \
+      -ccopt "-L${target_ocaml_lib}" \
       -ccopt "-Wl,-rpath,${target_lib}" \
       -o ./_native_duneboot \
       -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
