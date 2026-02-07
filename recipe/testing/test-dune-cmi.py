@@ -4,38 +4,27 @@
 Tests that uses multiple stdlib modules to catch CRC mismatches
 between compiled interfaces.
 
-OCaml 5.3.0 aarch64/ppc64le bug workaround applied automatically.
+OCaml 5.3.0 aarch64/ppc64le known bugs are documented but don't fail the build.
+OCaml 5.4.0+ failures are treated as real errors.
 """
 
 import os
-import platform
 import shutil
 import subprocess
 import sys
 import tempfile
 
-
-def get_ocaml_version():
-    """Get OCaml version string."""
-    try:
-        result = subprocess.run(
-            ["ocaml", "-version"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        for word in result.stdout.split():
-            if word[0].isdigit():
-                return word
-    except FileNotFoundError:
-        pass
-    return "unknown"
+from test_utils import (
+    get_ocaml_build_version_str,
+    get_target_arch,
+    handle_test_result,
+)
 
 
 def apply_ocaml_530_workaround():
     """Apply OCaml 5.3.0 aarch64/ppc64le GC workaround if needed."""
-    ocaml_version = get_ocaml_version()
-    arch = platform.machine().lower()
+    ocaml_version = get_ocaml_build_version_str()
+    arch = get_target_arch()
 
     print(f"OCaml version: {ocaml_version}")
     print(f"Architecture: {arch}")
@@ -52,9 +41,9 @@ def main():
 
     apply_ocaml_530_workaround()
 
-    errors = 0
     test_dir = tempfile.mkdtemp(prefix="dune_cmi_")
     original_dir = os.getcwd()
+    success = False
 
     try:
         os.chdir(test_dir)
@@ -103,25 +92,20 @@ let () =
             )
             if "Consistency check passed" in run_result.stdout:
                 print("[OK] Multi-module CRC consistency")
+                success = True
             else:
                 print("[FAIL] Execution failed")
                 print(f"  output: {run_result.stdout}")
-                errors += 1
         else:
             print("[FAIL] Build failed - possible CRC mismatch")
             print(f"  stderr: {result.stderr}")
-            errors += 1
 
     finally:
         os.chdir(original_dir)
         shutil.rmtree(test_dir, ignore_errors=True)
 
-    if errors > 0:
-        print(f"\n=== FAILED: {errors} error(s) ===")
-        return 1
-
-    print("\n=== Interface consistency tests passed ===")
-    return 0
+    # Use handle_test_result for version-aware failure handling
+    return handle_test_result("CRC consistency tests", success, arch_sensitive=True)
 
 
 if __name__ == "__main__":

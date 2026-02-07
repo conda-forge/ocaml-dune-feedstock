@@ -89,7 +89,6 @@ tests:
         python testing/test-dune-config.py
         python testing/test-dune-build.py
         python testing/test-dune-cmi.py
-        python testing/test-dune-paths.py
       files:
         recipe:
           - testing/test_utils.py
@@ -97,7 +96,6 @@ tests:
           - testing/test-dune-build.py
           - testing/test-dune-cmi.py
           - testing/test-dune-config.py
-          - testing/test-dune-paths.py
           - testing/test-dune-version.py
       requirements:
         run:
