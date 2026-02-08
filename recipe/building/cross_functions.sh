@@ -18,6 +18,7 @@ build_native_bootstrap() {
 
   # Point OCAMLLIB to target OCaml runtime
   export OCAMLLIB="${target_ocaml_lib}"
+  export OCAMLLIB="${BUILD_PREFIX}/lib/ocaml"
 
   # Set LIBRARY_PATH so linker finds target libs
   # This works for both gcc (Linux) and clang (macOS)
