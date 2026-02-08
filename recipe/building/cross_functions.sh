@@ -31,6 +31,7 @@ build_native_bootstrap() {
     ocamlc -verbose -output-complete-exe -intf-suffix .dummy -g \
       -cclib "${target_lib}/libzstd.dylib" \
       -cclib "-L${target_ocaml_lib}" \
+      -cclib "-L${BUILD_PREFIX}/lib/ocaml" \
       -cclib "-Wl,-rpath,${target_lib}" \
       -o ./_native_duneboot \
       -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
@@ -38,6 +39,7 @@ build_native_bootstrap() {
     ocamlc -output-complete-exe -intf-suffix .dummy -g \
       -cclib "-L${target_lib}" \
       -cclib "-L${target_ocaml_lib}" \
+      -cclib "-L${BUILD_PREFIX}/lib/ocaml" \
       -cclib "-Wl,-rpath,${target_lib}" \
       -o ./_native_duneboot \
       -I boot -I +unix unix.cma boot/types.ml boot/libs.ml boot/duneboot.ml
