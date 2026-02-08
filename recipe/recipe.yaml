@@ -1,5 +1,5 @@
 context:
-  build_number: 0
+  build_number: 1
   name: ocaml-dune
   version: "3.21.0"
 
@@ -38,7 +38,10 @@ requirements:
     - ${{ m2 }}grep
     - ${{ m2 }}make
     - ${{ m2 }}sed
-    - ocaml ==5.3.0 *_10
+    - if: build_platform != target_platform
+      then:
+        - ocaml >=5.3.0 *_10
+        - ocaml-dune
     - if: unix
       then:
         - file
@@ -46,10 +49,14 @@ requirements:
         - ${{ m2 }}coreutils
         - ${{ m2 }}diffutils
         - ${{ m2 }}which
-  run:
-    - if: aarch64 or ppc64le
+  host:
+    - zstd
+    - if: build_platform == target_platform
       then:
-        - zstd
+        - ocaml >=5.3.0 *_10
+  # With 5.4.0 _1 we will have a ocaml-compiler metapackage
+  # run:
+  #   - ocaml-compiler
   ignore_run_exports:
     by_name:
       - ocaml
@@ -77,27 +84,29 @@ tests:
         - etc/conda/deactivate.d/dune-deactivate.${{ sh }}
         - etc/conda/test-files/*
 
-  # Python-based functional tests
-  - script: |
-      python testing/test-dune-version.py
-      python testing/test-dune-arch.py
-      python testing/test-dune-config.py
-      python testing/test-dune-build.py
-      python testing/test-dune-cmi.py
-    files:
-      recipe:
-        - testing/test_utils.py
-        - testing/test-dune-arch.py
-        - testing/test-dune-build.py
-        - testing/test-dune-cmi.py
-        - testing/test-dune-config.py
-        - testing/test-dune-version.py
-    requirements:
-      run:
-        - ${{ m2 }}file
-        - binutils
-        - ocaml
-        - python >=3.9
+  # Python-based functional tests (skip arm64 - no emulator on conda-forge)
+  - if: not arm64
+    then:
+      script: |
+        python testing/test-dune-version.py
+        python testing/test-dune-arch.py
+        python testing/test-dune-config.py
+        python testing/test-dune-build.py
+        python testing/test-dune-cmi.py
+      files:
+        recipe:
+          - testing/test_utils.py
+          - testing/test-dune-arch.py
+          - testing/test-dune-build.py
+          - testing/test-dune-cmi.py
+          - testing/test-dune-config.py
+          - testing/test-dune-version.py
+      requirements:
+        run:
+          - ${{ m2 }}file
+          - binutils
+          - ocaml
+          - python >=3.9
 
 about:
   license: MIT
