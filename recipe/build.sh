@@ -66,6 +66,14 @@ if is_cross_compile; then
 elif is_non_unix; then
   echo "=== non-unix build ==="
   export PATH="${BUILD_PREFIX}/Library/mingw-w64/bin:${BUILD_PREFIX}/Library/bin:${BUILD_PREFIX}/bin:${PATH}"
+
+  # Fix Dune which.ml double-.exe bug on Windows
+  # Dune blindly appends .exe without checking if already present
+  if [[ -f "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch" ]]; then
+    echo "Applying double-.exe fix patch..."
+    patch -p1 < "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch"
+  fi
+
   make release
   make PREFIX="${DUNE_INSTALL_PREFIX}" install
 else
