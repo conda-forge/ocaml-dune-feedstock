@@ -50,7 +50,9 @@ requirements:
         - ${{ m2 }}diffutils
         - ${{ m2 }}which
   host:
-    - ocaml >=5.3.0 *_10
+    - if: build_platform == target_platform
+      then:
+        - ocaml >=5.3.0 *_10
   # With 5.4.0 _1 we will have a ocaml-compiler metapackage
   # run:
   #   - ocaml-compiler
