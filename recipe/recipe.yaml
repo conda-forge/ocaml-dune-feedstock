@@ -105,6 +105,7 @@ tests:
         run:
           - ${{ m2 }}file
           - binutils
+          - c-compiler
           - ocaml
           - python >=3.9
 
