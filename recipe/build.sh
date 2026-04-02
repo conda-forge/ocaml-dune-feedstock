@@ -45,27 +45,24 @@ echo "  is_cross_compile: $(is_cross_compile && echo 'true' || echo 'false')"
 
 if is_cross_compile; then
   source "${RECIPE_DIR}/building/cross_functions.sh"
-  
-  echo "=== Cross-compilation build ==="
 
-  # Check if native dune is available and try fast path first
-  if [[ -x "${BUILD_PREFIX}/bin/dune" ]]; then
-    echo "Native dune found, attempting fast cross-compile..."
-    if cross_compile_with_native_dune "${DUNE_INSTALL_PREFIX}"; then
-      echo "=== Cross-compilation with native dune succeeded ==="
-    else
-      echo "=== Cross-compilation with native dune failed, falling back to bootstrap ==="
-      clean_cross_build
-      cross_compile_with_bootstrap "${DUNE_INSTALL_PREFIX}"
-    fi
-  else
-    echo "Native dune not found, using full bootstrap..."
-    cross_compile_with_bootstrap "${DUNE_INSTALL_PREFIX}"
-  fi
+  echo "=== Cross-compilation build ==="
+  cross_compile_with_native_dune "${DUNE_INSTALL_PREFIX}"
 
 elif is_non_unix; then
   echo "=== non-unix build ==="
   export PATH="${BUILD_PREFIX}/Library/mingw-w64/bin:${BUILD_PREFIX}/Library/bin:${BUILD_PREFIX}/bin:${PATH}"
+
+  # Hide MSYS2 coreutils 'link' so OCaml finds MSVC's 'link.exe' for linking
+  # MSYS2's link creates hard links; MSVC's link.exe is the actual linker
+  for _link_dir in "${BUILD_PREFIX}/usr/bin" "${BUILD_PREFIX}/bin" "${BUILD_PREFIX}/Library/usr/bin"; do
+    if [[ -f "${_link_dir}/link" ]]; then
+      echo "Hiding MSYS2 link at ${_link_dir}/link"
+      mv "${_link_dir}/link" "${_link_dir}/link.msys2"
+    fi
+  done
+  # Verify which link will be used
+  echo "link resolves to: $(which link 2>/dev/null || echo 'not found')"
 
   # Fix Dune which.ml double-.exe bug on Windows
   # Dune blindly appends .exe without checking if already present
