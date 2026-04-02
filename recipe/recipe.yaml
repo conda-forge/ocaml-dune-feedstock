@@ -1,10 +1,10 @@
 context:
   build_number: 0
   name: ocaml-dune
-  version: "3.22.0"
+  version: "3.22.1"
 
-  library: ${{ "Library/" if not unix }}
-  m2: ${{ "m2-" if not unix }}
+  library: ${{ "Library/" if not unix else "" }}
+  m2: ${{ "m2-" if not unix else "" }}
   sh: ${{ "sh" if unix else "bat" }}
 
 package:
@@ -13,7 +13,7 @@ package:
 
 source:
   - url: https://github.com/ocaml/dune/archive/${{ version }}.tar.gz
-    sha256: a91f88417398d07406181793e7edcd845fc6b7f3e9f53cd362bdcba3bbaa0aef
+    sha256: 1aa4cd8b5fb7fbf5a71b8b8a19670120811df659cb97c27696a760aeceb501ca
 
 build:
   number: ${{ build_number }}
@@ -38,10 +38,15 @@ requirements:
     - ${{ m2 }}grep
     - ${{ m2 }}make
     - ${{ m2 }}sed
+    - ocaml_${{ build_platform }} >=5.4.0
     - if: build_platform != target_platform
       then:
-        - ocaml >=5.3.0 *_10
+        - ocaml_${{ target_platform }} >=5.4.0
         - ocaml-dune
+        - zstd
+    - if: osx
+      then:
+        - lld
     - if: unix
       then:
         - file
@@ -51,16 +56,11 @@ requirements:
         - ${{ m2 }}which
   host:
     - zstd
-    - if: build_platform == target_platform
-      then:
-        - ocaml >=5.3.0 *_10
-  # With 5.4.0 _1 we will have a ocaml-compiler metapackage
-  # run:
-  #   - ocaml-compiler
+  run:
+    - ocaml_${{ target_platform }}
   ignore_run_exports:
     by_name:
-      - ocaml
-      - ocaml-cross-compilers
+      - zstd
 
 tests:
   # Package contents validation
@@ -105,7 +105,7 @@ tests:
         run:
           - ${{ m2 }}file
           - binutils
-          - ocaml
+          - ocaml-compiler
           - python >=3.9
 
 about:
