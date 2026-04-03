@@ -8,6 +8,27 @@
 #   - Native dune (BUILD_PREFIX) to generate install artifacts
 # ==============================================================================
 
+# Determine cross-compiler prefix.
+# Linux: CONDA_TOOLCHAIN_HOST set by GCC activation (e.g. aarch64-conda-linux-gnu)
+# macOS: neither CONDA_TOOLCHAIN_HOST nor HOST is set; discover from installed
+#        cross-compiler binary (e.g. arm64-apple-darwin20.0.0-ocamlc)
+if [[ -n "${CONDA_TOOLCHAIN_HOST:-}" ]]; then
+  CROSS_PREFIX="${CONDA_TOOLCHAIN_HOST}"
+elif [[ -n "${HOST:-}" ]]; then
+  CROSS_PREFIX="${HOST}"
+else
+  # Discover from cross-compiler OCaml binary in BUILD_PREFIX/bin
+  # Native ocaml installs bare 'ocamlc'; cross-compiler installs '<prefix>-ocamlc'
+  _cross_ocamlc=$(ls "${BUILD_PREFIX}/bin/"*-ocamlc 2>/dev/null | head -1)
+  if [[ -n "${_cross_ocamlc}" ]]; then
+    CROSS_PREFIX="$(basename "${_cross_ocamlc}" | sed 's/-ocamlc$//')"
+    echo "  Discovered cross-compiler prefix: ${CROSS_PREFIX}"
+  else
+    fail "Cannot determine cross-compiler prefix — no CONDA_TOOLCHAIN_HOST, HOST, or *-ocamlc in BUILD_PREFIX/bin"
+  fi
+fi
+echo "  CROSS_PREFIX: ${CROSS_PREFIX}"
+
 # Build the native bootstrap tool (_native_duneboot)
 # This runs on the build machine and orchestrates cross-compilation.
 # Must be called BEFORE swap_ocaml_compilers (needs native ocamlc).
@@ -55,11 +76,11 @@ swap_ocaml_compilers() {
     for tool in ocamlc ocamldep ocamlopt ocamlobjinfo; do
       if [[ -f "${tool}" ]] || [[ -L "${tool}" ]]; then
         mv "${tool}" "${tool}.build"
-        ln -sf "${CONDA_TOOLCHAIN_HOST}-${tool}" "${tool}"
+        ln -sf "${CROSS_PREFIX}-${tool}" "${tool}"
       fi
       if [[ -f "${tool}.opt" ]] || [[ -L "${tool}.opt" ]]; then
         mv "${tool}.opt" "${tool}.opt.build"
-        ln -sf "${CONDA_TOOLCHAIN_HOST}-${tool}.opt" "${tool}.opt"
+        ln -sf "${CROSS_PREFIX}-${tool}.opt" "${tool}.opt"
       fi
     done
   popd > /dev/null
@@ -83,7 +104,7 @@ cross_compile_with_native_dune() {
   "${native_dune}" --version
 
   # Verify cross-compiler exists before doing anything destructive
-  local cross_ocamlc="${BUILD_PREFIX}/bin/${CONDA_TOOLCHAIN_HOST}-ocamlc"
+  local cross_ocamlc="${BUILD_PREFIX}/bin/${CROSS_PREFIX}-ocamlc"
   if [[ ! -f "${cross_ocamlc}" ]] && [[ ! -L "${cross_ocamlc}" ]]; then
     echo "ERROR: Cross-compiler OCaml not found at ${cross_ocamlc}"
     echo "  Add ocaml-cross-compilers or ocaml_\${target_platform} to build dependencies"

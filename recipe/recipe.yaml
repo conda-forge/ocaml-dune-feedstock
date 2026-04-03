@@ -1,5 +1,5 @@
 context:
-  build_number: 0
+  build_number: 1
   name: ocaml-dune
   version: "3.22.1"
 
@@ -26,27 +26,17 @@ build:
 
 requirements:
   build:
-    - if: unix
-      then:
-        - ${{ compiler("c") }}
-        - ${{ stdlib("c") }}
-      else:
-        - ${{ compiler("m2w64_c") }}
-        - ${{ stdlib("m2w64_c") }}
+    - ${{ compiler("ocaml") }}
+    - ocaml >=5.4.0 *_4
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}gawk
     - ${{ m2 }}grep
     - ${{ m2 }}make
     - ${{ m2 }}sed
-    - ocaml_${{ build_platform }} >=5.4.0
     - if: build_platform != target_platform
       then:
-        - ocaml_${{ target_platform }} >=5.4.0
         - ocaml-dune
         - zstd
-    - if: osx
-      then:
-        - lld
     - if: unix
       then:
         - file

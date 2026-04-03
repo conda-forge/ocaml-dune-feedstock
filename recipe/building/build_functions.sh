@@ -47,24 +47,3 @@ get_compiler() {
 }
 
 get_target_c_compiler() { get_compiler "${CONDA_TOOLCHAIN_HOST:-}"; }
-
-# Clean up cross-compilation build artifacts and restore native compilers
-clean_cross_build() {
-  rm -rf _boot _build _build_install_native _native_duneboot _dune.install.saved
-  # Restore native compilers if swap_ocaml_compilers was called before the failure
-  if [[ -f "${BUILD_PREFIX}/bin/ocamlc.build" ]] || [[ -L "${BUILD_PREFIX}/bin/ocamlc.build" ]]; then
-    echo "  Restoring native OCaml compilers..."
-    pushd "${BUILD_PREFIX}/bin" > /dev/null
-      for tool in ocamlc ocamldep ocamlopt ocamlobjinfo; do
-        if [[ -f "${tool}.build" ]] || [[ -L "${tool}.build" ]]; then
-          rm -f "${tool}"
-          mv "${tool}.build" "${tool}"
-        fi
-        if [[ -f "${tool}.opt.build" ]] || [[ -L "${tool}.opt.build" ]]; then
-          rm -f "${tool}.opt"
-          mv "${tool}.opt.build" "${tool}.opt"
-        fi
-      done
-    popd > /dev/null
-  fi
-}
