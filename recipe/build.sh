@@ -16,6 +16,12 @@ source "${RECIPE_DIR}/building/build_functions.sh"
 
 cd "${SRC_DIR}"
 
+# OCaml 5.4 Makefile.config includes $(LDFLAGS) in MKEXE/MKDLL.
+# Strip -fuse-ld=lld from conda's LDFLAGS — OCaml uses its own linker
+# (ld64 on macOS, ld on Linux, MSVC link.exe on Windows), not lld.
+export LDFLAGS="${LDFLAGS:-}"
+export LDFLAGS="${LDFLAGS//-fuse-ld=lld/}"
+
 # Cross-compilation: Ensure linker finds target libs (PREFIX) before build libs (BUILD_PREFIX)
 # LIBRARY_PATH affects clang/ld64 at link time (both macOS and Linux)
 if is_cross_compile; then
