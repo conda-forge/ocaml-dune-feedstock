@@ -1,5 +1,5 @@
 context:
-  build_number: 1
+  build_number: 2
   name: ocaml-dune
   version: "3.22.1"
 
@@ -27,7 +27,6 @@ build:
 requirements:
   build:
     - ${{ compiler("ocaml") }}
-    - ocaml >=5.4.0 *_4
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}gawk
     - ${{ m2 }}grep
