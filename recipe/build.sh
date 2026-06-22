@@ -72,10 +72,10 @@ elif is_non_unix; then
 
   # Fix Dune which.ml double-.exe bug on Windows
   # Dune blindly appends .exe without checking if already present
-  if [[ -f "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch" ]]; then
-    echo "Applying double-.exe fix patch..."
-    patch -p1 < "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch"
-  fi
+  #if [[ -f "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch" ]]; then
+  #  echo "Applying double-.exe fix patch..."
+  #  patch -p1 < "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch"
+  #fi
 
   make release
   make PREFIX="${DUNE_INSTALL_PREFIX}" install
