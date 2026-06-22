@@ -30,12 +30,18 @@ fi
 
 # macOS: Set runtime library path for zstd (runtime loading, not linking)
 if is_macos; then
+  if [[ "${target_platform}" == "osx-arm64" ]]; then
+    export CONDA_OCAML_AS="arm64-apple-darwin20.0.0-clang -c"
+    export CONDA_OCAML_CC="arm64-apple-darwin20.0.0-clang"
+    export CONDA_OCAML_MKDLL="arm64-apple-darwin20.0.0-clang -mmacosx-version-min=11.0 -shared -Wl,-headerpad_max_install_names -undefined dynamic_lookup"
+    export CONDA_OCAML_MKEXE="arm64-apple-darwin20.0.0-clang -mmacosx-version-min=11.0 -Wl,-headerpad_max_install_names -Wl,-rpath,@executable_path/../lib"
+  fi
   export DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib:${BUILD_PREFIX}/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
 fi
 
 # Set install prefix
 if is_non_unix; then
-  export DUNE_INSTALL_PREFIX="${_PREFIX_}/Library"
+  export DUNE_INSTALL_PREFIX="${PREFIX}/Library"
   export PATH="${BUILD_PREFIX}/bin:${BUILD_PREFIX}/Library/bin:${PATH}"
 else
   export DUNE_INSTALL_PREFIX="${PREFIX}"
