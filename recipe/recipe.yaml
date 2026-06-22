@@ -17,8 +17,7 @@ source:
 
 build:
   number: ${{ build_number }}
-  script:
-    - file: build.sh
+  script: build.sh
   dynamic_linking:
     missing_dso_allowlist:
       - if: not unix
