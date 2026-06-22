@@ -1,7 +1,7 @@
 context:
   build_number: 0
   name: ocaml-dune
-  version: "3.23.1"
+  version: "3.24.0"
 
   library: ${{ "Library/" if not unix else "" }}
   m2: ${{ "m2-" if not unix else "" }}
@@ -13,7 +13,7 @@ package:
 
 source:
   - url: https://github.com/ocaml/dune/archive/${{ version }}.tar.gz
-    sha256: 63fbef75d09dd4a05ee2624d41e574d658e33faff5c5b7d6bc67eab2af03dc71
+    sha256: 574495584e545ec10863ee1e6485818c29875da12436a60ad13262a5229b7eff
 
 build:
   number: ${{ build_number }}
