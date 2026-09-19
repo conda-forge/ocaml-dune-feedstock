@@ -98,9 +98,8 @@ def main():
         print("[FAIL] dune not found in PATH")
         return 1
 
-    # On Windows, add .exe suffix if needed
-    if platform.system() == "Windows" and not dune_path.endswith(".exe"):
-        dune_path += ".exe"
+    # shutil.which already resolves the PATHEXT suffix on Windows and only
+    # returns a path that exists, so the name it hands back is used as-is.
 
     print(f"Binary: {dune_path}")
 

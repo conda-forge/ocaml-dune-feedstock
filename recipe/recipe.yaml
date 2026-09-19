@@ -1,5 +1,5 @@
 context:
-  build_number: 3
+  build_number: 4
   name: ocaml-dune
   version: "3.24.2"
 
@@ -102,20 +102,18 @@ tests:
 
   # Python-based functional tests (all arm64 lanes are native)
   - script: |
-      python testing/test-dune-version.py
-      python testing/test-dune-arch.py
-      python testing/test-dune-config.py
-      python testing/test-dune-build.py
-      python testing/test-dune-cmi.py
-      python testing/test-dune-activation.py
+      python testing/run_all_tests.py
     files:
       recipe:
         - testing/test_utils.py
+        - testing/run_all_tests.py
+        - testing/probe-dune-cache.py
         - testing/test-dune-activation.py
         - testing/test-dune-arch.py
         - testing/test-dune-build.py
         - testing/test-dune-cmi.py
         - testing/test-dune-config.py
+        - testing/test-dune-stubs.py
         - testing/test-dune-version.py
     requirements:
       run:
