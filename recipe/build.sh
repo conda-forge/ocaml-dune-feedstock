@@ -52,7 +52,6 @@ if is_non_unix; then
     _bp="${BUILD_PREFIX//\\//}"
     BUILD_PREFIX_POSIX="/${_bp%%:*}${_bp#*:}"
   fi
-  export BUILD_PREFIX_POSIX
   export DUNE_INSTALL_PREFIX="${PREFIX}/Library"
   export PATH="${BUILD_PREFIX_POSIX}/bin:${BUILD_PREFIX_POSIX}/Library/bin:${PATH}"
 else
@@ -113,13 +112,6 @@ elif is_non_unix; then
   done
   # Verify which link will be used
   echo "link resolves to: $(which link 2>/dev/null || echo 'not found')"
-
-  # Fix Dune which.ml double-.exe bug on Windows
-  # Dune blindly appends .exe without checking if already present
-  #if [[ -f "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch" ]]; then
-  #  echo "Applying double-.exe fix patch..."
-  #  patch -p1 < "${RECIPE_DIR}/patches/xxxx-fix-dune-which-double-exe-on-windows.patch"
-  #fi
 
   # Do NOT pass SHELL= here. The install recipe expands to
   # `dune.exe install --prefix D:\...\h_env/Library dune`, and running that
