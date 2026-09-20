@@ -23,7 +23,8 @@ def main():
         if path:
             print(f"  {compiler} found: {path}")
         else:
-            print(f"  WARNING: {compiler} not found")
+            print(f"  ERROR: {compiler} not found")
+            errors += 1
 
     # Test dune context
     print("\n=== Testing dune context ===")

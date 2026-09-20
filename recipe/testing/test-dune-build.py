@@ -8,8 +8,7 @@ Tests dune's ability to build OCaml projects:
 - Incremental builds
 - dune clean
 
-OCaml 5.3.0 aarch64/ppc64le known bugs are documented but don't fail the build.
-OCaml 5.4.0+ failures are treated as real errors.
+The OCaml 5.3.0 GC workaround (OCAMLRUNPARAM s=16M) is applied on aarch64/ppc64le but does not suppress failures.
 """
 
 import os
@@ -213,10 +212,9 @@ def main():
         print("\n=== All dune functional tests passed ===")
         return 0
 
-    # Use handle_test_result for version-aware failure handling
-    # arch_sensitive=True: only document as known bug on aarch64/ppc64le
+    # Report the result; no suppression.
     test_summary = f"Build tests ({', '.join(failed_tests)})"
-    return handle_test_result(test_summary, success=False, arch_sensitive=True)
+    return handle_test_result(test_summary, success=False)
 
 
 if __name__ == "__main__":

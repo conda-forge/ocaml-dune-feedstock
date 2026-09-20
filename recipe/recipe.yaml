@@ -1,5 +1,5 @@
 context:
-  build_number: 4
+  build_number: 5
   name: ocaml-dune
   version: "3.24.2"
 
@@ -21,7 +21,11 @@ build:
   # also what marks it a used variant key, which is what actually splits
   # win_64 into two lanes; a variant key nothing references is pruned.
   string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
-  script: build.sh
+  script:
+    file: build.sh
+    env:
+      BUILD_PLATFORM: ${{ build_platform }}
+      TARGET_PLATFORM: ${{ target_platform }}
   dynamic_linking:
     missing_dso_allowlist:
       - if: not unix
@@ -66,14 +70,14 @@ requirements:
   run:
     - if: unix
       then:
-        - ocaml_${{ target_platform }}
+        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }}
       else:
         # ocaml_win-64's run_exports carry only the C stdlib, never ocaml
         # itself, so nothing constrains the variant at install time and a
         # gcc-built ocaml-dune can be paired with the vs2022 ocaml. Mirror the
         # build-time glob to make the pairing explicit. Prefix glob, not a full
         # build string: gcc_* survives hash churn and build_number bumps.
-        - ocaml_${{ target_platform }} * ${{ c_compiler }}_*
+        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_compiler }}_*
   ignore_run_exports:
     by_name:
       - zstd
@@ -119,7 +123,9 @@ tests:
       run:
         - ${{ m2 }}file
         - binutils
-        - ocaml-compiler
+        # No version-suppression left in the test suite, so the OCaml floor
+        # here must be a real run constraint, not a runtime skip.
+        - ocaml-compiler >=${{ ocaml_compiler_version }}
         - python >=3.9
 
 about:

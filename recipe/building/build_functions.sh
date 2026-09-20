@@ -9,7 +9,16 @@
 is_macos() { [[ "${target_platform}" == "osx-"* ]]; }
 is_linux() { [[ "${target_platform}" == "linux-"* ]]; }
 is_non_unix() { [[ "${target_platform}" != "linux-"* ]] && [[ "${target_platform}" != "osx-"* ]]; }
-is_cross_compile() { [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" ]]; }
+is_cross_compile() {
+  # BUILD_PLATFORM/TARGET_PLATFORM are passed from recipe.yaml and always
+  # reflect what rattler-build was invoked with. CONDA_BUILD_CROSS_COMPILATION
+  # is a conda-build-era variable that does not reliably reach this script.
+  if [[ -n "${BUILD_PLATFORM:-}" && -n "${TARGET_PLATFORM:-}" ]]; then
+    [[ "${BUILD_PLATFORM}" != "${TARGET_PLATFORM}" ]]
+  else
+    [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" ]]
+  fi
+}
 
 # ==============================================================================
 # HELPER FUNCTIONS
