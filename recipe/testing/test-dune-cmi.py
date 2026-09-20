@@ -4,8 +4,7 @@
 Tests that uses multiple stdlib modules to catch CRC mismatches
 between compiled interfaces.
 
-OCaml 5.3.0 aarch64/ppc64le known bugs are documented but don't fail the build.
-OCaml 5.4.0+ failures are treated as real errors.
+The OCaml 5.3.0 GC workaround (OCAMLRUNPARAM s=16M) is applied on aarch64/ppc64le but does not suppress failures.
 """
 
 import os
@@ -105,7 +104,7 @@ let () =
         shutil.rmtree(test_dir, ignore_errors=True)
 
     # Use handle_test_result for version-aware failure handling
-    return handle_test_result("CRC consistency tests", success, arch_sensitive=True)
+    return handle_test_result("CRC consistency tests", success)
 
 
 if __name__ == "__main__":

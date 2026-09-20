@@ -3,9 +3,7 @@
 
 Validates dune binary runs and basic command help works.
 
-OCaml 5.3.0 aarch64/ppc64le bug workaround applied automatically.
-Failures on OCaml <= 5.3.0 are documented as known bugs.
-Failures on OCaml >= 5.4.0 are treated as real failures.
+The OCaml 5.3.0 GC workaround (OCAMLRUNPARAM s=16M) is applied on aarch64/ppc64le to improve stability, but failures are never suppressed.
 """
 
 import os
@@ -29,7 +27,11 @@ def apply_ocaml_530_workaround():
     print(f"OCaml build version: {version_str}")
     print(f"Target architecture: {arch}")
 
-    if build_version[:2] == (5, 3) and arch in ("aarch64", "ppc64le", "arm64"):
+    if (
+        build_version is not None
+        and build_version[:2] == (5, 3)
+        and arch in ("aarch64", "ppc64le", "arm64")
+    ):
         print("Applying OCaml 5.3.0 GC workaround (s=16M)")
         os.environ["OCAMLRUNPARAM"] = "s=16M"
 
@@ -79,9 +81,8 @@ def main():
     print("\n--- Test: dune clean --help ---")
     all_ok &= run_cmd(["dune", "clean", "--help"], "dune clean --help")
 
-    # Use handle_test_result to properly handle known OCaml bugs
-    # arch_sensitive=True because the GC bugs mainly affect aarch64/ppc64le
-    return handle_test_result("dune version tests", all_ok, arch_sensitive=True)
+    # Report the result; no suppression.
+    return handle_test_result("dune version tests", all_ok)
 
 
 if __name__ == "__main__":

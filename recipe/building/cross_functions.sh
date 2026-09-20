@@ -9,10 +9,15 @@
 # ==============================================================================
 
 # Determine cross-compiler prefix.
+# OCAML_CROSS_TARGET (set by ocaml_cross_activate.sh) is the actual TARGET
+# triplet and must outrank CONDA_TOOLCHAIN_HOST, which on some lanes carries
+# the BUILD machine's own triplet instead of the target's.
 # Linux: CONDA_TOOLCHAIN_HOST set by GCC activation (e.g. aarch64-conda-linux-gnu)
 # macOS: neither CONDA_TOOLCHAIN_HOST nor HOST is set; discover from installed
 #        cross-compiler binary (e.g. arm64-apple-darwin20.0.0-ocamlc)
-if [[ -n "${CONDA_TOOLCHAIN_HOST:-}" ]]; then
+if [[ -n "${OCAML_CROSS_TARGET:-}" ]]; then
+  CROSS_PREFIX="${OCAML_CROSS_TARGET}"
+elif [[ -n "${CONDA_TOOLCHAIN_HOST:-}" ]]; then
   CROSS_PREFIX="${CONDA_TOOLCHAIN_HOST}"
 elif [[ -n "${HOST:-}" ]]; then
   CROSS_PREFIX="${HOST}"
@@ -24,7 +29,7 @@ else
     CROSS_PREFIX="$(basename "${_cross_ocamlc}" | sed 's/-ocamlc$//')"
     echo "  Discovered cross-compiler prefix: ${CROSS_PREFIX}"
   else
-    fail "Cannot determine cross-compiler prefix — no CONDA_TOOLCHAIN_HOST, HOST, or *-ocamlc in BUILD_PREFIX/bin"
+    fail "Cannot determine cross-compiler prefix - no OCAML_CROSS_TARGET, CONDA_TOOLCHAIN_HOST, HOST, or *-ocamlc in BUILD_PREFIX/bin"
   fi
 fi
 echo "  CROSS_PREFIX: ${CROSS_PREFIX}"
