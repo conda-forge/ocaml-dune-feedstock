@@ -3,8 +3,6 @@
 
 Tests that uses multiple stdlib modules to catch CRC mismatches
 between compiled interfaces.
-
-The OCaml 5.3.0 GC workaround (OCAMLRUNPARAM s=16M) is applied on aarch64/ppc64le but does not suppress failures.
 """
 
 import os
@@ -13,32 +11,11 @@ import subprocess
 import sys
 import tempfile
 
-from test_utils import (
-    get_ocaml_build_version_str,
-    get_target_arch,
-    handle_test_result,
-)
-
-
-def apply_ocaml_530_workaround():
-    """Apply OCaml 5.3.0 aarch64/ppc64le GC workaround if needed."""
-    ocaml_version = get_ocaml_build_version_str()
-    arch = get_target_arch()
-
-    print(f"OCaml version: {ocaml_version}")
-    print(f"Architecture: {arch}")
-
-    if ocaml_version.startswith("5.3.") and arch in ("aarch64", "ppc64le", "arm64"):
-        print("Applying OCaml 5.3.0 GC workaround (s=16M)")
-        os.environ["OCAMLRUNPARAM"] = "s=16M"
-
-    print(f"OCAMLRUNPARAM: {os.environ.get('OCAMLRUNPARAM', '<default>')}")
+from test_utils import handle_test_result
 
 
 def main():
     print("=== Dune Interface Consistency Tests ===")
-
-    apply_ocaml_530_workaround()
 
     test_dir = tempfile.mkdtemp(prefix="dune_cmi_")
     original_dir = os.getcwd()

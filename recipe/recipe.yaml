@@ -57,11 +57,10 @@ requirements:
         - ${{ stdlib("m2w64_c") }}
       else:
         - ${{ stdlib("c") }}
+    # bash interprets build.sh, make drives dune's upstream Makefile, and
+    # coreutils supplies the cp/mv/mkdir that build.sh uses on windows.
     - ${{ m2 }}bash >=5.2
-    - ${{ m2 }}gawk
-    - ${{ m2 }}grep
     - ${{ m2 }}make
-    - ${{ m2 }}sed
     - if: build_platform != target_platform
       then:
         - ocaml-dune
@@ -71,8 +70,6 @@ requirements:
         - file
       else:
         - ${{ m2 }}coreutils
-        - ${{ m2 }}diffutils
-        - ${{ m2 }}which
   host:
     - zstd
   run:
@@ -110,7 +107,6 @@ tests:
         - ${{ library }}share/emacs/site-lisp/dune/dune.el
         - etc/conda/activate.d/dune-activate.${{ sh }}
         - etc/conda/deactivate.d/dune-deactivate.${{ sh }}
-        - etc/conda/test-files/*
 
   # Python-based functional tests (all arm64 lanes are native)
   - script: |
@@ -130,7 +126,6 @@ tests:
     requirements:
       run:
         - ${{ m2 }}file
-        - binutils
         # No version-suppression left in the test suite, so the OCaml floor
         # here must be a real run constraint, not a runtime skip.
         - ocaml-compiler >=${{ ocaml_compiler_version }}

@@ -8,19 +8,13 @@ start with "$PREFIX/lib/ocaml:$BUILD_PREFIX/lib/ocaml" so host OCaml
 libraries are visible when ocaml-dune is a build dependency.
 """
 
-import os
 import subprocess
 import sys
 from pathlib import Path
 
+from test_utils import get_prefix
+
 UNSET = "<unset>"
-
-
-def get_prefix() -> Path:
-    prefix = os.environ.get("PREFIX", os.environ.get("CONDA_PREFIX", ""))
-    if not prefix:
-        return Path("/usr")
-    return Path(prefix)
 
 
 def get_scripts() -> tuple[Path, Path]:
