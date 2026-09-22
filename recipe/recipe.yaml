@@ -3,6 +3,8 @@ context:
   name: ocaml-dune
   version: "3.24.2"
 
+  # ocaml_win-64 ships gcc_* and vs2022_* at the same version/build; name the track.
+  c_toolchain: ${{ "" if unix else c_compiler ~ "_*" }}
   library: ${{ "Library/" if not unix else "" }}
   m2: ${{ "m2-" if not unix else "" }}
   sh: ${{ "sh" if unix else "bat" }}
@@ -17,9 +19,6 @@ source:
 
 build:
   number: ${{ build_number }}
-  # Mirrors ocaml-feedstock's build string. Referencing c_compiler here is
-  # also what marks it a used variant key, which is what actually splits
-  # win_64 into two lanes; a variant key nothing references is pruned.
   string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
   script:
     file: build.sh
@@ -35,30 +34,12 @@ build:
 
 requirements:
   build:
-    - if: unix
-      then:
-        - ${{ compiler("ocaml") }}
-      else:
-        # ocaml_win-64 publishes gcc_* and vs2022_* at the SAME build
-        # number, so the unpinned spec that compiler("ocaml") expands to is
-        # settled by upload order - the newer artifact wins, and the two
-        # ship different closures. Pin the build string to this lane's
-        # variant so the choice is the recipe's, not the mirror's.
-        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_compiler }}_*
-    # Pins the sysroot the C toolchain targets and records the resulting
-    # __glibc floor on the package; the C compiler itself already comes in
-    # through ocaml_${{ target_platform }}. The bare line resolved the MSVC
-    # stdlib on both windows lanes, so the mingw artifact carried vc and
-    # vc14_runtime beside the m2w64 sysroot. Predicate on c_compiler, not on
-    # platform: win_64 splits into two lanes and a platform test would hand
-    # the m2w64 stdlib to the vs2022 lane.
+    - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - if: not unix and c_compiler == "gcc"
       then:
         - ${{ stdlib("m2w64_c") }}
       else:
         - ${{ stdlib("c") }}
-    # bash interprets build.sh, make drives dune's upstream Makefile, and
-    # coreutils supplies the cp/mv/mkdir that build.sh uses on windows.
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
     - if: build_platform != target_platform
@@ -73,16 +54,7 @@ requirements:
   host:
     - zstd
   run:
-    - if: unix
-      then:
-        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }}
-      else:
-        # ocaml_win-64 build 9 does carry a strong_constraint on its own
-        # variant (ocaml_win-64 * gcc_*), but a constraint binds only when the
-        # package is present - this explicit run dep is what makes it present
-        # and carries the floor. Prefix glob, not a full build string: gcc_*
-        # survives hash churn and build_number bumps.
-        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_compiler }}_*
+    - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
   ignore_run_exports:
     by_name:
       - zstd
@@ -107,6 +79,8 @@ tests:
         - ${{ library }}share/emacs/site-lisp/dune/dune.el
         - etc/conda/activate.d/dune-activate.${{ sh }}
         - etc/conda/deactivate.d/dune-deactivate.${{ sh }}
+        # Tests artifacts
+        - etc/conda/test-files/ocaml-dune/*
 
   # Python-based functional tests (all arm64 lanes are native)
   - script: |
