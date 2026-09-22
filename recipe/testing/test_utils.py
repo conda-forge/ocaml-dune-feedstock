@@ -3,7 +3,7 @@
 
 import os
 import platform
-from functools import lru_cache
+import subprocess
 from pathlib import Path
 
 
@@ -14,38 +14,6 @@ def get_prefix() -> Path:
         # Fallback for local testing
         return Path("/usr")
     return Path(prefix)
-
-
-@lru_cache(maxsize=1)
-def get_ocaml_build_version() -> tuple[int, int, int] | None:
-    """Get OCaml version that was used during build.
-
-    Reads from etc/conda/test-files/ocaml-build-version file written during build.
-
-    Returns:
-        Tuple of (major, minor, patch) version numbers.
-        Returns None if the version file is missing or cannot be parsed.
-        Callers must check for None explicitly rather than compare it as a
-        tuple.
-    """
-    prefix = get_prefix()
-    version_file = prefix / "etc" / "conda" / "test-files" / "ocaml-build-version"
-
-    try:
-        version_str = version_file.read_text().strip()
-        parts = version_str.split(".")
-        return (int(parts[0]), int(parts[1]), int(parts[2].split("+")[0]))
-    except (FileNotFoundError, IndexError, ValueError):
-        print(f"WARNING: could not read/parse OCaml build version from {version_file}")
-        return None
-
-
-def get_ocaml_build_version_str() -> str:
-    """Get OCaml build version as a string."""
-    version = get_ocaml_build_version()
-    if version is None:
-        return "unknown"
-    return f"{version[0]}.{version[1]}.{version[2]}"
 
 
 def get_target_arch() -> str:
@@ -66,12 +34,59 @@ def get_target_arch() -> str:
     return platform.machine().lower()
 
 
+def write_file(path, content):
+    """Write content to a file."""
+    dirname = os.path.dirname(path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+
+
+def run_cmd(cmd, check_output=None):
+    """Run command and optionally check output contains a string."""
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        return False, (
+            f"exit code {result.returncode}\n"
+            f"  stdout: {result.stdout}\n"
+            f"  stderr: {result.stderr}"
+        )
+    if check_output and check_output not in result.stdout:
+        return False, (
+            f"output missing '{check_output}'\n"
+            f"  stdout: {result.stdout}\n"
+            f"  stderr: {result.stderr}"
+        )
+    return True, result.stdout
+
+
+def run_build_test(build_cmd, run_cmd_args, expected_output):
+    """Run a build test and return success status with details.
+
+    Returns:
+        Tuple of (success: bool, error_msg: str or None)
+    """
+    result = subprocess.run(build_cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        return False, (
+            f"build failed (exit {result.returncode})\n"
+            f"  stdout: {result.stdout}\n"
+            f"  stderr: {result.stderr}"
+        )
+
+    ok, msg = run_cmd(run_cmd_args, expected_output)
+    if not ok:
+        return False, f"run failed: {msg}"
+
+    return True, None
+
+
 def handle_test_result(test_name: str, success: bool) -> int:
     """Report a test result. Returns 0 on success, 1 on failure."""
     if success:
         print(f"\n=== {test_name} passed ===")
         return 0
     print(f"\n=== {test_name} FAILED ===")
-    print(f"  Build OCaml version: {get_ocaml_build_version_str()}")
     print(f"  Target architecture: {get_target_arch()}")
     return 1

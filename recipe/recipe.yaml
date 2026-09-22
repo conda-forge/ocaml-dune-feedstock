@@ -1,8 +1,10 @@
 context:
-  build_number: 5
+  build_number: 6
   name: ocaml-dune
   version: "3.24.2"
 
+  # ocaml_win-64 ships gcc_* and vs2022_* at the same version/build; name the track.
+  c_toolchain: ${{ "" if unix else c_compiler ~ "_*" }}
   library: ${{ "Library/" if not unix else "" }}
   m2: ${{ "m2-" if not unix else "" }}
   sh: ${{ "sh" if unix else "bat" }}
@@ -17,9 +19,6 @@ source:
 
 build:
   number: ${{ build_number }}
-  # Mirrors ocaml-feedstock's build string. Referencing c_compiler here is
-  # also what marks it a used variant key, which is what actually splits
-  # win_64 into two lanes; a variant key nothing references is pruned.
   string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
   script:
     file: build.sh
@@ -35,25 +34,14 @@ build:
 
 requirements:
   build:
-    - if: unix
+    - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+    - if: not unix and c_compiler == "gcc"
       then:
-        - ${{ compiler("ocaml") }}
+        - ${{ stdlib("m2w64_c") }}
       else:
-        # ocaml_win-64 publishes gcc_* and vs2022_* at the SAME build
-        # number, so the unpinned spec that compiler("ocaml") expands to is
-        # settled by upload order - the newer artifact wins, and the two
-        # ship different closures. Pin the build string to this lane's
-        # variant so the choice is the recipe's, not the mirror's.
-        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_compiler }}_*
-    # Pins the sysroot the C toolchain targets and records the resulting
-    # __glibc floor on the package; the C compiler itself already comes in
-    # through ocaml_${{ target_platform }}.
-    - ${{ stdlib("c") }}
+        - ${{ stdlib("c") }}
     - ${{ m2 }}bash >=5.2
-    - ${{ m2 }}gawk
-    - ${{ m2 }}grep
     - ${{ m2 }}make
-    - ${{ m2 }}sed
     - if: build_platform != target_platform
       then:
         - ocaml-dune
@@ -63,21 +51,10 @@ requirements:
         - file
       else:
         - ${{ m2 }}coreutils
-        - ${{ m2 }}diffutils
-        - ${{ m2 }}which
   host:
     - zstd
   run:
-    - if: unix
-      then:
-        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }}
-      else:
-        # ocaml_win-64's run_exports carry only the C stdlib, never ocaml
-        # itself, so nothing constrains the variant at install time and a
-        # gcc-built ocaml-dune can be paired with the vs2022 ocaml. Mirror the
-        # build-time glob to make the pairing explicit. Prefix glob, not a full
-        # build string: gcc_* survives hash churn and build_number bumps.
-        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_compiler }}_*
+    - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
   ignore_run_exports:
     by_name:
       - zstd
@@ -102,7 +79,8 @@ tests:
         - ${{ library }}share/emacs/site-lisp/dune/dune.el
         - etc/conda/activate.d/dune-activate.${{ sh }}
         - etc/conda/deactivate.d/dune-deactivate.${{ sh }}
-        - etc/conda/test-files/*
+        # Tests artifacts
+        - etc/conda/test-files/ocaml-dune/*
 
   # Python-based functional tests (all arm64 lanes are native)
   - script: |
@@ -122,7 +100,6 @@ tests:
     requirements:
       run:
         - ${{ m2 }}file
-        - binutils
         # No version-suppression left in the test suite, so the OCaml floor
         # here must be a real run constraint, not a runtime skip.
         - ocaml-compiler >=${{ ocaml_compiler_version }}

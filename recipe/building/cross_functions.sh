@@ -26,7 +26,8 @@ else
   # Native ocaml installs bare 'ocamlc'; cross-compiler installs '<prefix>-ocamlc'
   _cross_ocamlc=$(ls "${BUILD_PREFIX}/bin/"*-ocamlc 2>/dev/null | head -1)
   if [[ -n "${_cross_ocamlc}" ]]; then
-    CROSS_PREFIX="$(basename "${_cross_ocamlc}" | sed 's/-ocamlc$//')"
+    _cross_ocamlc_base="${_cross_ocamlc##*/}"
+    CROSS_PREFIX="${_cross_ocamlc_base%-ocamlc}"
     echo "  Discovered cross-compiler prefix: ${CROSS_PREFIX}"
   else
     fail "Cannot determine cross-compiler prefix - no OCAML_CROSS_TARGET, CONDA_TOOLCHAIN_HOST, HOST, or *-ocamlc in BUILD_PREFIX/bin"

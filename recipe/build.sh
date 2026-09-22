@@ -111,7 +111,7 @@ elif is_non_unix; then
     fi
   done
   # Verify which link will be used
-  echo "link resolves to: $(which link 2>/dev/null || echo 'not found')"
+  echo "link resolves to: $(command -v link 2>/dev/null || echo 'not found')"
 
   # Do NOT pass SHELL= here. The install recipe expands to
   # `dune.exe install --prefix D:\...\h_env/Library dune`, and running that
@@ -140,18 +140,6 @@ else
   cp "${RECIPE_DIR}/activation/dune-activate.sh" "${ACTIVATE_DIR}/dune-activate.sh"
   cp "${RECIPE_DIR}/activation/dune-deactivate.sh" "${DEACTIVATE_DIR}/dune-deactivate.sh"
 fi
-
-# ==============================================================================
-# WRITE OCAML BUILD VERSION FOR TESTS
-# ==============================================================================
-# Tests need to know the OCaml version used during build to distinguish
-# between known bugs (OCaml <= 5.3.0) and real failures (OCaml >= 5.4.0)
-
-TEST_FILES_DIR="${PREFIX}/etc/conda/test-files"
-mkdir -p "${TEST_FILES_DIR}"
-OCAML_BUILD_VERSION=$(ocamlc -version)
-echo "${OCAML_BUILD_VERSION}" > "${TEST_FILES_DIR}/ocaml-build-version"
-echo "Wrote OCaml build version ${OCAML_BUILD_VERSION} to ${TEST_FILES_DIR}/ocaml-build-version"
 
 # ==============================================================================
 # FIX MAN PAGE AND EMACS LOCATIONS
