@@ -149,7 +149,6 @@ rule token = parse
         os.chdir(original_dir)
         shutil.rmtree(test_dir, ignore_errors=True)
 
-    # Aggregate results using version-aware handling
     all_passed = all(success for _, success in test_results)
     failed_tests = [name for name, success in test_results if not success]
 

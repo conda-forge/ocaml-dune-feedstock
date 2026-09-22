@@ -52,10 +52,11 @@ def main():
             for line in lines:
                 if line.strip():
                     print(f"    {line}")
+            print("[OK] configuration discovery")
         else:
-            print("  (describe workspace may need more setup - not an error)")
-
-        print("[OK] configuration discovery")
+            print(f"  ERROR: dune describe workspace failed (exit {result.returncode})")
+            print(f"    stderr: {result.stderr}")
+            errors += 1
 
     finally:
         os.chdir(original_dir)

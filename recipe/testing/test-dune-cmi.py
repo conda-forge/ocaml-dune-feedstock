@@ -80,7 +80,6 @@ let () =
         os.chdir(original_dir)
         shutil.rmtree(test_dir, ignore_errors=True)
 
-    # Use handle_test_result for version-aware failure handling
     return handle_test_result("CRC consistency tests", success)
 
 

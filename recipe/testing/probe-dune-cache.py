@@ -40,6 +40,8 @@ import subprocess
 import sys
 import tempfile
 
+from test_utils import write_file
+
 BUILD_TIMEOUT = 300
 
 DUNE_PROJECT = "(lang dune 3.0)"
@@ -58,15 +60,6 @@ ENV_KEYS = (
     "TEMP",
     "TMP",
 )
-
-
-def write_file(path, content):
-    """Write content to a file, creating parent directories as needed."""
-    dirname = os.path.dirname(path)
-    if dirname:
-        os.makedirs(dirname, exist_ok=True)
-    with open(path, "w") as f:
-        f.write(content)
 
 
 def report_env():

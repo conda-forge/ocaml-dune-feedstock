@@ -38,13 +38,16 @@ def run_tests() -> int:
     here = os.path.dirname(os.path.abspath(__file__))
     results = []
 
-    for name in PROBE_ORDER:
-        print(f"=== running probe {name} ===")
-        path = os.path.join(here, name)
-        if os.path.isfile(path):
-            subprocess.run([sys.executable, path])
-        else:
-            print(f"[WARN] probe {name} not found at {path}")
+    if sys.platform == "win32":
+        for name in PROBE_ORDER:
+            print(f"=== running probe {name} ===")
+            path = os.path.join(here, name)
+            if os.path.isfile(path):
+                subprocess.run([sys.executable, path])
+            else:
+                print(f"[WARN] probe {name} not found at {path}")
+    else:
+        print("=== probes are windows-only, skipped on this platform ===")
 
     for name in TEST_ORDER:
         print(f"=== running {name} ===")
