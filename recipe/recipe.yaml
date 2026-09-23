@@ -1,5 +1,5 @@
 context:
-  build_number: 6
+  build_number: 7
   name: ocaml-dune
   version: "3.24.2"
 
@@ -22,9 +22,6 @@ build:
   string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
   script:
     file: build.sh
-    env:
-      BUILD_PLATFORM: ${{ build_platform }}
-      TARGET_PLATFORM: ${{ target_platform }}
   dynamic_linking:
     missing_dso_allowlist:
       - if: not unix

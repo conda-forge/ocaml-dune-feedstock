@@ -33,7 +33,6 @@ else
     fail "Cannot determine cross-compiler prefix - no OCAML_CROSS_TARGET, CONDA_TOOLCHAIN_HOST, HOST, or *-ocamlc in BUILD_PREFIX/bin"
   fi
 fi
-echo "  CROSS_PREFIX: ${CROSS_PREFIX}"
 
 # Build the native bootstrap tool (_native_duneboot)
 # This runs on the build machine and orchestrates cross-compilation.
@@ -50,9 +49,6 @@ build_native_bootstrap() {
   # Set LIBRARY_PATH so linker finds target libs (zstd, etc.)
   export LIBRARY_PATH="${target_ocaml_lib}:${target_lib}:${LIBRARY_PATH:-}"
 
-  echo "  OCAMLLIB: ${OCAMLLIB}"
-  echo "  LIBRARY_PATH: ${LIBRARY_PATH}"
-
   # dune >= 3.24 keeps the boot pretty-printer in boot/pps.mll and generates
   # boot/pps.ml with ocamllex before compiling; see the modules list and the
   # ocamllex call in boot/bootstrap.ml.
@@ -61,7 +57,6 @@ build_native_bootstrap() {
     ocamllex -q -o boot/pps.ml boot/pps.mll
     boot_modules="boot/pps.ml ${boot_modules}"
   fi
-  echo "  boot modules: ${boot_modules}"
 
   if is_macos; then
     ocamlc -verbose -output-complete-exe -intf-suffix .dummy -g \
@@ -116,7 +111,6 @@ cross_compile_with_native_dune() {
     echo "ERROR: Native dune not found at ${native_dune}"
     return 1
   fi
-  echo "  Native dune: ${native_dune}"
   "${native_dune}" --version
 
   # Verify cross-compiler exists before doing anything destructive
@@ -126,7 +120,6 @@ cross_compile_with_native_dune() {
     echo "  Add ocaml-cross-compilers or ocaml_\${target_platform} to build dependencies"
     return 1
   fi
-  echo "  Cross-compiler: ${cross_ocamlc}"
 
   # Phase 1: Build install artifacts (man pages, docs, .install file) with native dune
   echo "=== Phase 1: Building install artifacts with native dune ==="

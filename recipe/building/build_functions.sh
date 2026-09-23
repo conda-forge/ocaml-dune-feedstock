@@ -9,50 +9,6 @@
 is_macos() { [[ "${target_platform}" == "osx-"* ]]; }
 is_linux() { [[ "${target_platform}" == "linux-"* ]]; }
 is_non_unix() { [[ "${target_platform}" != "linux-"* ]] && [[ "${target_platform}" != "osx-"* ]]; }
-is_cross_compile() {
-  # BUILD_PLATFORM/TARGET_PLATFORM are passed from recipe.yaml and always
-  # reflect what rattler-build was invoked with. CONDA_BUILD_CROSS_COMPILATION
-  # is a conda-build-era variable that does not reliably reach this script.
-  if [[ -n "${BUILD_PLATFORM:-}" && -n "${TARGET_PLATFORM:-}" ]]; then
-    [[ "${BUILD_PLATFORM}" != "${TARGET_PLATFORM}" ]]
-  else
-    [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" ]]
-  fi
-}
+is_cross_compile() { [[ "${build_platform}" != "${target_platform}" ]]; }
 
-# ==============================================================================
-# HELPER FUNCTIONS
-# ==============================================================================
-
-warn() {
-  echo "WARNING: $*" >&2
-}
-
-fail() {
-  echo "ERROR: $*" >&2
-  exit 1
-}
-
-# Get compiler path based on type and toolchain
-get_compiler() {
-  local toolchain_prefix="${1:-}"
-
-  local c_compiler
-  if [[ -n "${toolchain_prefix}" ]]; then
-    if [[ "${toolchain_prefix}" == *"apple-darwin"* ]]; then
-      c_compiler="${toolchain_prefix}-clang"
-    else
-      c_compiler="${toolchain_prefix}-gcc"
-    fi
-  else
-    if is_macos; then
-      c_compiler="clang"
-    else
-      c_compiler="gcc"
-    fi
-  fi
-
-  echo "${c_compiler}"
-}
-
-get_target_c_compiler() { get_compiler "${CONDA_TOOLCHAIN_HOST:-}"; }
+fail() { echo "ERROR: $*" >&2; exit 1; }
