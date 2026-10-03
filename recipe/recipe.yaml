@@ -49,7 +49,9 @@ requirements:
       else:
         - ${{ m2 }}coreutils
   host:
-    - zstd
+    - if: target_platform != "linux-s390x"
+      then:
+        - zstd
   run:
     - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
   ignore_run_exports:
@@ -95,12 +97,13 @@ tests:
         - testing/test-dune-stubs.py
         - testing/test-dune-version.py
     requirements:
-      run:
+      build:
         - ${{ m2 }}file
+        - python >=3.9
+      run:
         # No version-suppression left in the test suite, so the OCaml floor
         # here must be a real run constraint, not a runtime skip.
         - ocaml-compiler >=${{ ocaml_compiler_version }}
-        - python >=3.9
 
 about:
   license: MIT
