@@ -6,3 +6,10 @@ c_compiler:
     then:
       - vs2022
       - gcc
+
+channel_sources:
+  - conda-forge/label/ocaml_experimental,conda-forge
+
+# Uploads from this branch go to the ocaml_experimental label, not main.
+channel_targets:
+  - conda-forge ocaml_experimental

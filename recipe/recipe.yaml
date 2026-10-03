@@ -1,5 +1,5 @@
 context:
-  build_number: 7
+  build_number: 107
   name: ocaml-dune
   version: "3.24.2"
 
@@ -19,7 +19,7 @@ source:
 
 build:
   number: ${{ build_number }}
-  string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
+  string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_experimental_${{ build_number }}
   script:
     file: build.sh
   dynamic_linking:
