@@ -10,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 
+from test_utils import expects_native_compiler
+
 
 def main():
     print("=== Dune Configuration Discovery Tests ===")
@@ -19,6 +21,9 @@ def main():
     # Test compiler discovery
     print("\n=== Testing compiler discovery ===")
     for compiler in ["ocamlc", "ocamlopt"]:
+        if compiler == "ocamlopt" and not expects_native_compiler():
+            print("  [SKIP] ocamlopt: bytecode-only ocaml on win-arm64")
+            continue
         path = shutil.which(compiler)
         if path:
             print(f"  {compiler} found: {path}")

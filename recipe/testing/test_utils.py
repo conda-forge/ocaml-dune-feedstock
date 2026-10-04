@@ -38,6 +38,11 @@ def get_target_arch() -> str:
     return platform.machine().lower()
 
 
+def expects_native_compiler() -> bool:
+    """ocaml on win-arm64 is bytecode-only (no ocamlopt)."""
+    return os.environ.get("target_platform", "") != "win-arm64"
+
+
 def write_file(path, content):
     """Write content to a file."""
     dirname = os.path.dirname(path)

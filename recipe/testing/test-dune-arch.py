@@ -18,6 +18,7 @@ import sys
 TARGET_ARCH_PATTERNS = {
     "linux-64": ("x86-64", "x86_64"),
     "win-64": ("x86-64", "x86_64"),
+    "win-arm64": ("aarch64", "arm64"),
     "osx-64": ("x86_64", "x86-64"),
     "linux-aarch64": ("aarch64", "arm64"),
     "osx-arm64": ("aarch64", "arm64"),

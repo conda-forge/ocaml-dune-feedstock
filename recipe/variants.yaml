@@ -2,13 +2,18 @@ ocaml_compiler_version:
   - "5.4.0"
 
 c_compiler:
-  - if: not unix
+  - if: not unix and x86_64
     then:
       - vs2022
       - gcc
+  - if: not unix and arm64
+    then:
+      - zig
 
 channel_sources:
-  - conda-forge/label/ocaml_experimental,conda-forge
+  - if: not unix and arm64
+    then: conda-forge/label/ocaml_experimental,conda-forge/label/zig_dev,conda-forge
+    else: conda-forge/label/ocaml_experimental,conda-forge
 
 # Uploads from this branch go to the ocaml_experimental label, not main.
 channel_targets:
