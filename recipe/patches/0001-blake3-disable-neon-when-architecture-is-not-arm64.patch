@@ -1,0 +1,44 @@
+--- a/boot/duneboot.ml
++++ b/boot/duneboot.ml
+@@ -1599,7 +1599,12 @@
+     is_target_arch ~architecture arch
+   ;;
+
+-  let make_c (c : File_kind.c) ~fn ~os_type ~word_size ~ccomp_type =
++  let make_c (c : File_kind.c) ~fn ~os_type ~word_size ~ccomp_type ~architecture =
++    let neon_flags =
++      if String.starts_with ~prefix:"blake3_" fn && architecture <> `arm64
++      then [ "-DBLAKE3_USE_NEON=0" ]
++      else []
++    in
+     let extra_flags =
+       match fn, ccomp_type, os_type, word_size with
+       | (fn, _, `Cygwin, _ | fn, _, _, `Thirty_two)
+@@ -1617,7 +1622,7 @@
+       | "ev.c", _, _, _ -> [ "-w" ]
+       | _, _, _, _ -> []
+     in
+-    { Source.flags = extra_flags @ c.flags; name = fn }
++    { Source.flags = neon_flags @ extra_flags @ c.flags; name = fn }
+   ;;
+
+   let gen_build_info_module (ml : File_kind.ml) =
+@@ -1785,7 +1790,7 @@
+         match src.kind with
+         | C c ->
+           if keep_c c ~architecture
+-          then `Left (make_c c ~fn ~os_type ~word_size ~ccomp_type)
++          then `Left (make_c c ~fn ~os_type ~word_size ~ccomp_type ~architecture)
+           else `Skip
+         | Ml _ -> `Middle fn
+         | Header -> `Skip
+--- a/src/ocaml-blake3-mini/dune
++++ b/src/ocaml-blake3-mini/dune
+@@ -230,5 +230,6 @@
+   "-DBLAKE3_NO_SSE2"
+   "-DBLAKE3_NO_SSE41"
+   "-DBLAKE3_NO_AVX2"
+-  "-DBLAKE3_NO_AVX512")
++  "-DBLAKE3_NO_AVX512"
++  "-DBLAKE3_USE_NEON=0")
+  (names blake3 blake3_portable blake3_dispatch))

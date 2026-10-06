@@ -16,6 +16,8 @@ package:
 source:
   - url: https://github.com/ocaml/dune/archive/${{ version }}.tar.gz
     sha256: 3c4facfef1bc1f96235808865665b94857e6e508ce346bfc36b53b775fd8423c
+    patches:
+      - patches/0001-blake3-disable-neon-when-architecture-is-not-arm64.patch
 
 build:
   number: ${{ build_number }}
