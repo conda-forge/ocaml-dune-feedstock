@@ -33,7 +33,11 @@ build:
 
 requirements:
   build:
-    - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+    - if: target_platform == "win-arm64"
+      then:
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}[build_number=">=116"]
+      else:
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - if: not unix and c_compiler == "gcc"
       then:
         - ${{ stdlib("m2w64_c") }}
@@ -55,7 +59,11 @@ requirements:
       then:
         - zstd
   run:
-    - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
+    - if: target_platform == "win-arm64"
+      then:
+        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}[build_number=">=116"]
+      else:
+        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
   ignore_run_exports:
     by_name:
       - zstd
