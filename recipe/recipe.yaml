@@ -1,5 +1,5 @@
 context:
-  build_number: 7
+  build_number: 107
   name: ocaml-dune
   version: "3.24.2"
 
@@ -16,10 +16,12 @@ package:
 source:
   - url: https://github.com/ocaml/dune/archive/${{ version }}.tar.gz
     sha256: 3c4facfef1bc1f96235808865665b94857e6e508ce346bfc36b53b775fd8423c
+    patches:
+      - patches/0001-blake3-disable-neon-when-architecture-is-not-arm64.patch
 
 build:
   number: ${{ build_number }}
-  string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
+  string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_experimental_${{ build_number }}
   script:
     file: build.sh
   dynamic_linking:
@@ -31,7 +33,11 @@ build:
 
 requirements:
   build:
-    - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+    - if: target_platform == "win-arm64"
+      then:
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}[build_number=">=116"]
+      else:
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - if: not unix and c_compiler == "gcc"
       then:
         - ${{ stdlib("m2w64_c") }}
@@ -49,9 +55,15 @@ requirements:
       else:
         - ${{ m2 }}coreutils
   host:
-    - zstd
+    - if: target_platform != "linux-s390x"
+      then:
+        - zstd
   run:
-    - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
+    - if: target_platform == "win-arm64"
+      then:
+        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}[build_number=">=116"]
+      else:
+        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
   ignore_run_exports:
     by_name:
       - zstd
@@ -95,12 +107,13 @@ tests:
         - testing/test-dune-stubs.py
         - testing/test-dune-version.py
     requirements:
-      run:
+      build:
         - ${{ m2 }}file
+        - python >=3.9
+      run:
         # No version-suppression left in the test suite, so the OCaml floor
         # here must be a real run constraint, not a runtime skip.
         - ocaml-compiler >=${{ ocaml_compiler_version }}
-        - python >=3.9
 
 about:
   license: MIT

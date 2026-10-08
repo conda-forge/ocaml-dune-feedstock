@@ -18,10 +18,13 @@ import sys
 TARGET_ARCH_PATTERNS = {
     "linux-64": ("x86-64", "x86_64"),
     "win-64": ("x86-64", "x86_64"),
+    "win-arm64": ("aarch64", "arm64"),
     "osx-64": ("x86_64", "x86-64"),
     "linux-aarch64": ("aarch64", "arm64"),
     "osx-arm64": ("aarch64", "arm64"),
     "linux-ppc64le": ("powerpc64le", "PowerPC", "ppc64"),
+    "linux-riscv64": ("risc-v", "riscv"),
+    "linux-s390x": ("s/390", "s390"),
 }
 
 # Broader set used only to produce a human-readable label of whatever arch
@@ -35,6 +38,10 @@ KNOWN_ARCH_LABELS = [
     ("powerpc64le", "ppc64le (POWER 64-bit)"),
     ("powerpc", "ppc64le (POWER 64-bit)"),
     ("ppc64", "ppc64le (POWER 64-bit)"),
+    ("risc-v", "riscv64 (RISC-V 64-bit)"),
+    ("riscv", "riscv64 (RISC-V 64-bit)"),
+    ("s/390", "s390x (IBM Z)"),
+    ("s390", "s390x (IBM Z)"),
 ]
 
 

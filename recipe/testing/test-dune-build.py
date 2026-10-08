@@ -15,7 +15,12 @@ import subprocess
 import sys
 import tempfile
 
-from test_utils import handle_test_result, run_build_test, write_file
+from test_utils import (
+    expects_native_compiler,
+    handle_test_result,
+    run_build_test,
+    write_file,
+)
 
 
 def main():
@@ -55,25 +60,28 @@ def main():
 
         # Test 2: Native executable
         print("\n=== Test 2: Simple native executable ===")
-        write_file(
-            "simple_native/dune",
-            "(executable\n (name hello)\n (modes native))",
-        )
-        write_file(
-            "simple_native/hello.ml",
-            'let () = print_endline "Hello from dune (native)"',
-        )
-
-        success, err = run_build_test(
-            ["dune", "build", "simple_native/hello.exe"],
-            ["./_build/default/simple_native/hello.exe"],
-            "Hello from dune",
-        )
-        if success:
-            print("[OK] native build + run")
+        if not expects_native_compiler():
+            print("[SKIP] native build + run: bytecode-only ocaml on win-arm64")
         else:
-            print(f"[FAIL] native: {err}")
-        test_results.append(("Native build", success))
+            write_file(
+                "simple_native/dune",
+                "(executable\n (name hello)\n (modes native))",
+            )
+            write_file(
+                "simple_native/hello.ml",
+                'let () = print_endline "Hello from dune (native)"',
+            )
+
+            success, err = run_build_test(
+                ["dune", "build", "simple_native/hello.exe"],
+                ["./_build/default/simple_native/hello.exe"],
+                "Hello from dune",
+            )
+            if success:
+                print("[OK] native build + run")
+            else:
+                print(f"[FAIL] native: {err}")
+            test_results.append(("Native build", success))
 
         # Test 3: Multi-file library project
         print("\n=== Test 3: Multi-file library project ===")
