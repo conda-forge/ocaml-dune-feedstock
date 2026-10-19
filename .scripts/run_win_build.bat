@@ -138,6 +138,8 @@ if /i "%CI%" == "azure" (
     )
     set "TEMP=%UPLOAD_TEMP%"
 )
+set "UPLOAD_ON_BRANCH=experimental"
+:: Note, this needs GIT_BRANCH too
 call :start_group "Validating outputs"
 validate_recipe_outputs "%FEEDSTOCK_NAME%"
 if !errorlevel! neq 0 exit /b !errorlevel!
