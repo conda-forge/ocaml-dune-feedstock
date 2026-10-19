@@ -3,7 +3,7 @@
 # ==============================================================================
 # Cross-compile dune for a target architecture using:
 #   - Native OCaml (BUILD_PREFIX) to build the bootstrap tool
-#   - Cross shims selected by ocaml_use_cross (ocaml >=18 activation)
+#   - Cross shims selected by ocaml_use_cross (ocaml self-activation)
 #   - Native dune (BUILD_PREFIX) to generate install artifacts
 # ==============================================================================
 
@@ -41,9 +41,6 @@ build_native_bootstrap() {
 
   local target_lib="${PREFIX}/lib"
   local target_ocaml_lib="${PREFIX}/lib/ocaml"
-
-  # Set LIBRARY_PATH so linker finds target libs (zstd, etc.)
-  export LIBRARY_PATH="${target_ocaml_lib}:${target_lib}:${LIBRARY_PATH:-}"
 
   # dune >= 3.24 keeps the boot pretty-printer in boot/pps.mll and generates
   # boot/pps.ml with ocamllex before compiling; see the modules list and the
@@ -97,10 +94,10 @@ cross_compile_with_native_dune() {
     return 1
   fi
 
-  # ocaml _18+ cross activation puts the cross shims first on PATH; the
+  # ocaml cross self-activation puts the cross shims first on PATH; the
   # install artifacts and the bootstrap tool must use the native compiler.
   if ! declare -F ocaml_use_native >/dev/null || ! declare -F ocaml_use_cross >/dev/null; then
-    echo "ERROR: ocaml_use_native/ocaml_use_cross not defined (need ocaml cross >=18)"
+    echo "ERROR: ocaml_use_native/ocaml_use_cross not defined (need a self-activating ocaml cross)"
     return 1
   fi
   ocaml_use_native

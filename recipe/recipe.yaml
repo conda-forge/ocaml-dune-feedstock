@@ -51,7 +51,7 @@ requirements:
       then:
         - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.*
         # self-activating cross tree with ocaml_use_native/ocaml_use_cross
-        - ocaml_${{ target_platform }}[version="${{ ocaml_compiler_version }}.*", build_number=">=18"]
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.*
     - if: build_platform != target_platform and not unix
       then:
         - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
