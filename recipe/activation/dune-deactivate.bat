@@ -1,5 +1,5 @@
 @echo off
-REM Dune deactivation script - restore original OCAMLPATH and OCAMLFIND_DESTDIR
+REM Dune deactivation script - restore original OCAMLPATH
 
 if defined _CONDA_DUNE_OCAMLPATH_BACKUP (
     set "OCAMLPATH=%_CONDA_DUNE_OCAMLPATH_BACKUP%"
@@ -7,10 +7,3 @@ if defined _CONDA_DUNE_OCAMLPATH_BACKUP (
     set "OCAMLPATH="
 )
 set "_CONDA_DUNE_OCAMLPATH_BACKUP="
-
-if defined _CONDA_DUNE_DESTDIR_BACKUP (
-    set "OCAMLFIND_DESTDIR=%_CONDA_DUNE_DESTDIR_BACKUP%"
-) else (
-    set "OCAMLFIND_DESTDIR="
-)
-set "_CONDA_DUNE_DESTDIR_BACKUP="

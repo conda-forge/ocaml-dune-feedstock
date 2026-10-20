@@ -10,11 +10,4 @@ if defined CONDA_PREFIX (
         set "_CONDA_DUNE_OCAMLPATH_BACKUP="
         set "OCAMLPATH=%CONDA_PREFIX%\Library\lib\ocaml"
     )
-
-    if defined OCAMLFIND_DESTDIR (
-        set "_CONDA_DUNE_DESTDIR_BACKUP=%OCAMLFIND_DESTDIR%"
-    ) else (
-        set "_CONDA_DUNE_DESTDIR_BACKUP="
-    )
-    set "OCAMLFIND_DESTDIR=%CONDA_PREFIX%\Library\lib\ocaml"
 )

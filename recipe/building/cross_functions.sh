@@ -3,8 +3,7 @@
 # ==============================================================================
 # Cross-compile dune for a target architecture using:
 #   - Native OCaml (BUILD_PREFIX) to build the bootstrap tool
-#   - Cross-compiler OCaml wrappers (aarch64-conda-linux-gnu-ocamlc etc.)
-#     which automatically set OCAMLLIB, CONDA_OCAML_CC, etc.
+#   - Cross shims selected by ocaml_use_cross (ocaml self-activation)
 #   - Native dune (BUILD_PREFIX) to generate install artifacts
 # ==============================================================================
 
@@ -36,18 +35,12 @@ fi
 
 # Build the native bootstrap tool (_native_duneboot)
 # This runs on the build machine and orchestrates cross-compilation.
-# Must be called BEFORE swap_ocaml_compilers (needs native ocamlc).
+# Must run under ocaml_use_native (needs native ocamlc).
 build_native_bootstrap() {
   echo "=== Building native bootstrap tool ==="
 
   local target_lib="${PREFIX}/lib"
   local target_ocaml_lib="${PREFIX}/lib/ocaml"
-
-  # Bootstrap runs on build machine — use native OCaml stdlib
-  export OCAMLLIB="${BUILD_PREFIX}/lib/ocaml"
-
-  # Set LIBRARY_PATH so linker finds target libs (zstd, etc.)
-  export LIBRARY_PATH="${target_ocaml_lib}:${target_lib}:${LIBRARY_PATH:-}"
 
   # dune >= 3.24 keeps the boot pretty-printer in boot/pps.mll and generates
   # boot/pps.ml with ocamllex before compiling; see the modules list and the
@@ -77,26 +70,6 @@ build_native_bootstrap() {
   fi
 }
 
-# Redirect bare ocamlc/ocamlopt names to cross-compiler wrappers.
-# Needed because _native_duneboot calls these tools by bare name.
-# The cross-compiler wrappers (e.g. aarch64-conda-linux-gnu-ocamlc.opt)
-# automatically set OCAMLLIB, CONDA_OCAML_CC, etc. — no manual env setup needed.
-swap_ocaml_compilers() {
-  echo "  Swapping OCaml compilers to cross-compilers..."
-  pushd "${BUILD_PREFIX}/bin" > /dev/null
-    for tool in ocamlc ocamldep ocamlopt ocamlobjinfo; do
-      if [[ -f "${tool}" ]] || [[ -L "${tool}" ]]; then
-        mv "${tool}" "${tool}.build"
-        ln -sf "${CROSS_PREFIX}-${tool}" "${tool}"
-      fi
-      if [[ -f "${tool}.opt" ]] || [[ -L "${tool}.opt" ]]; then
-        mv "${tool}.opt" "${tool}.opt.build"
-        ln -sf "${CROSS_PREFIX}-${tool}.opt" "${tool}.opt"
-      fi
-    done
-  popd > /dev/null
-}
-
 # ==============================================================================
 # MAIN CROSS-COMPILATION FUNCTION
 # ==============================================================================
@@ -121,6 +94,14 @@ cross_compile_with_native_dune() {
     return 1
   fi
 
+  # ocaml cross self-activation puts the cross shims first on PATH; the
+  # install artifacts and the bootstrap tool must use the native compiler.
+  if ! declare -F ocaml_use_native >/dev/null || ! declare -F ocaml_use_cross >/dev/null; then
+    echo "ERROR: ocaml_use_native/ocaml_use_cross not defined (need a self-activating ocaml cross)"
+    return 1
+  fi
+  ocaml_use_native
+
   # Phase 1: Build install artifacts (man pages, docs, .install file) with native dune
   echo "=== Phase 1: Building install artifacts with native dune ==="
   mkdir -p _boot
@@ -141,10 +122,13 @@ cross_compile_with_native_dune() {
     return 1
   fi
 
-  # Phase 3: Swap bare compiler names to cross-compiler wrappers
-  # The wrappers handle OCAMLLIB, CONDA_OCAML_CC, etc. automatically
+  # Phase 3: Bare compiler names resolve to the cross shims (sets OCAMLLIB etc.)
   echo "=== Phase 3: Setting up cross-compilers ==="
-  swap_ocaml_compilers
+  ocaml_use_cross
+  local shim_dir
+  shim_dir="$(dirname "$(command -v ocamlc)")"
+  echo "  ocamlc -> ${shim_dir}/ocamlc"
+  echo "  OCAMLLIB=${OCAMLLIB:-}"
 
   # Phase 4: Run bootstrap with cross-compiler to produce target dune.exe
   echo "=== Phase 4: Running bootstrap with cross-compiler ==="
@@ -163,6 +147,9 @@ cross_compile_with_native_dune() {
   mkdir -p _build/install _build/default
   mv _build_install_native _build/install/default || return 1
   mv _dune.install.saved _build/default/dune.install || return 1
+
+  # native dune runs again; keep it on the native compiler
+  ocaml_use_native
 
   if ! "${native_dune}" install --prefix="${install_prefix}" dune; then
     echo "ERROR: Failed to install with native dune"

@@ -1,5 +1,5 @@
 context:
-  build_number: 107
+  build_number: 112
   name: ocaml-dune
   version: "3.24.2"
 
@@ -21,7 +21,7 @@ source:
 
 build:
   number: ${{ build_number }}
-  string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_experimental_${{ build_number }}
+  string: ${{ c_compiler ~ "_" if not unix }}h${{ hash }}_${{ build_number }}
   script:
     file: build.sh
   dynamic_linking:
@@ -33,22 +33,31 @@ build:
 
 requirements:
   build:
-    - if: target_platform == "win-arm64"
-      then:
-        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}[build_number=">=116"]
-      else:
-        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+    - ${{ compiler("ocaml") }}
     - if: not unix and c_compiler == "gcc"
       then:
         - ${{ stdlib("m2w64_c") }}
       else:
         - ${{ stdlib("c") }}
+    - if: not unix and c_compiler != "gcc"
+      then:
+        - ${{ compiler("c") }}
+    - if: not unix
+      then:
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
+    - if: build_platform != target_platform and unix
+      then:
+        - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.*
+        # self-activating cross tree with ocaml_use_native/ocaml_use_cross
+        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.*
+    - if: build_platform != target_platform and not unix
+      then:
+        - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
     - if: build_platform != target_platform
       then:
         - ocaml-dune
-        - zstd
     - if: unix
       then:
         - file
@@ -58,12 +67,8 @@ requirements:
     - if: target_platform != "linux-s390x"
       then:
         - zstd
-  run:
-    - if: target_platform == "win-arm64"
-      then:
-        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}[build_number=">=116"]
-      else:
-        - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
+  run_constraints:
+    - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
   ignore_run_exports:
     by_name:
       - zstd
@@ -111,9 +116,13 @@ tests:
         - ${{ m2 }}file
         - python >=3.9
       run:
-        # No version-suppression left in the test suite, so the OCaml floor
-        # here must be a real run constraint, not a runtime skip.
-        - ocaml-compiler >=${{ ocaml_compiler_version }}
+        - ocaml ${{ ocaml_compiler_version }}.*
+        - if: not unix
+          then:
+            - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+        - if: not unix and c_compiler != "gcc"
+          then:
+            - ${{ compiler("c") }}
 
 about:
   license: MIT
