@@ -1,9 +1,5 @@
 c_compiler:
 - gcc
-c_stdlib:
-- sysroot
-c_stdlib_version:
-- '2.17'
 channel_sources:
 - conda-forge
 channel_targets:
@@ -13,6 +9,6 @@ docker_image:
 ocaml_compiler:
 - ocaml
 ocaml_compiler_version:
-- 5.4.0
+- 5.5.1
 target_platform:
 - linux-s390x

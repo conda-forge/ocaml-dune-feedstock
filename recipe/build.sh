@@ -22,12 +22,6 @@ cd "${SRC_DIR}"
 export LDFLAGS="${LDFLAGS:-}"
 export LDFLAGS="${LDFLAGS//-fuse-ld=lld/}"
 
-# Cross-compilation: Ensure linker finds target libs (PREFIX) before build libs (BUILD_PREFIX)
-# LIBRARY_PATH affects clang/ld64 at link time (both macOS and Linux)
-if is_cross_compile; then
-  export LIBRARY_PATH="${PREFIX}/lib:${BUILD_PREFIX}/lib:${LIBRARY_PATH:-}"
-fi
-
 # macOS: Set runtime library path for zstd (runtime loading, not linking)
 if is_macos; then
   if [[ "${target_platform}" == "osx-arm64" ]]; then

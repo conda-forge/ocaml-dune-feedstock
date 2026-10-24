@@ -1,5 +1,5 @@
 context:
-  build_number: 12
+  build_number: 13
   name: ocaml-dune
   version: "3.24.2"
 
@@ -34,29 +34,26 @@ build:
 requirements:
   build:
     - ${{ compiler("ocaml") }}
-    - if: not unix and c_compiler == "gcc"
-      then:
-        - ${{ stdlib("m2w64_c") }}
-      else:
-        - ${{ stdlib("c") }}
-    - if: not unix and c_compiler != "gcc"
-      then:
-        - ${{ compiler("c") }}
     - if: not unix
       then:
+        - if: c_compiler == "gcc"
+          then:
+            - ${{ stdlib("m2w64_c") }}
+          else:
+            - ${{ stdlib("c") }}
+            - ${{ compiler("c") }}
         - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
-    - if: build_platform != target_platform and unix
-      then:
-        - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.*
-        # self-activating cross tree with ocaml_use_native/ocaml_use_cross
-        - ocaml_${{ target_platform }}[version="${{ ocaml_compiler_version }}.*", build_number=">=18"]
-    - if: build_platform != target_platform and not unix
-      then:
-        - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
     - if: build_platform != target_platform
       then:
+        - if: unix
+          then:
+            - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.*
+            # self-activating cross tree with ocaml_use_native/ocaml_use_cross
+            - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.*
+          else:
+            - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
         - ocaml-dune
     - if: unix
       then:
@@ -120,9 +117,9 @@ tests:
         - if: not unix
           then:
             - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
-        - if: not unix and c_compiler != "gcc"
-          then:
-            - ${{ compiler("c") }}
+            - if: c_compiler != "gcc"
+              then:
+                - ${{ compiler("c") }}
 
 about:
   license: MIT
