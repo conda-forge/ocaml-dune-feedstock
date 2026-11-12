@@ -54,7 +54,6 @@ requirements:
             - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.*
           else:
             - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
-        - ocaml-dune
     - if: unix
       then:
         - file
