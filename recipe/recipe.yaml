@@ -1,9 +1,9 @@
 context:
-  build_number: 0
+  build_number: 1
   name: ocaml-dune
   version: "3.25.0"
 
-  # ocaml_win-64 ships gcc_* and vs2022_* at the same version/build; name the track.
+  # ocaml_win-64 ships gcc_* and vs_* at the same version/build; name the track.
   c_toolchain: ${{ "" if unix else c_compiler ~ "_*" }}
   library: ${{ "Library/" if not unix else "" }}
   m2: ${{ "m2-" if not unix else "" }}
@@ -41,7 +41,11 @@ requirements:
             - ${{ stdlib("m2w64_c") }}
           else:
             - ${{ stdlib("c") }}
-            - ${{ compiler("c") }}
+            - if: c_compiler == "vs"
+              then:
+                - ${{ compiler("c") }}
+              else:
+                - ${{ c_compiler }}_${{ target_platform }}
         - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
@@ -116,9 +120,12 @@ tests:
         - if: not unix
           then:
             - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
-            - if: c_compiler != "gcc"
+            - if: c_compiler == "vs"
               then:
                 - ${{ compiler("c") }}
+            - if: c_compiler == "zig"
+              then:
+                - ${{ c_compiler }}_${{ target_platform }}
 
 about:
   license: MIT

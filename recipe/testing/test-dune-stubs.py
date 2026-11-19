@@ -5,7 +5,7 @@ Exercises two toolchain paths that the other dune functional tests never
 touch:
 - C stubs: builds a library with (foreign_stubs (language c) ...), which
   invokes the C compiler and linker. This is the path where the win gcc
-  and vs2022 ocaml variants genuinely differ.
+  and vs ocaml variants genuinely differ.
 - ocamllex: builds a lexer via (ocamllex ...), exercising the tool whose
   resolution historically broke on win_64.
 """
@@ -38,7 +38,7 @@ def main():
 
         # Test 1: C stubs - exercises the C compiler and linker path used by
         # dune's (foreign_stubs (language c) ...), where the win gcc and
-        # vs2022 ocaml variants genuinely differ.
+        # vs ocaml variants genuinely differ.
         print("\n=== Test 1: C stubs (foreign_stubs) ===")
         os.makedirs("cstubs", exist_ok=True)
         os.chdir("cstubs")
