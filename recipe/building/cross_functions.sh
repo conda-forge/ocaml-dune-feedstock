@@ -4,7 +4,7 @@
 # Cross-compile dune for a target architecture using:
 #   - Native OCaml (BUILD_PREFIX) to build the bootstrap tool
 #   - Cross shims selected by ocaml_use_cross (ocaml self-activation)
-#   - Native dune (BUILD_PREFIX) to generate install artifacts
+#   - Native dune bootstrapped from source to generate install artifacts
 # ==============================================================================
 
 # Determine cross-compiler prefix.
@@ -75,16 +75,10 @@ build_native_bootstrap() {
 # ==============================================================================
 
 cross_compile_with_native_dune() {
-  local native_dune="${BUILD_PREFIX}/bin/dune"
+  local native_dune="${PWD}/_native_dune.exe"
   local install_prefix="${1}"
 
-  echo "=== Cross-compilation: Using native dune from BUILD_PREFIX ==="
-
-  if [[ ! -x "${native_dune}" ]]; then
-    echo "ERROR: Native dune not found at ${native_dune}"
-    return 1
-  fi
-  "${native_dune}" --version
+  echo "=== Cross-compilation: Using native dune bootstrapped from source ==="
 
   # Verify cross-compiler exists before doing anything destructive
   local cross_ocamlc="${BUILD_PREFIX}/bin/${CROSS_PREFIX}-ocamlc"
@@ -104,8 +98,13 @@ cross_compile_with_native_dune() {
 
   # Phase 1: Build install artifacts (man pages, docs, .install file) with native dune
   echo "=== Phase 1: Building install artifacts with native dune ==="
-  mkdir -p _boot
-  cp -v "${native_dune}" _boot/dune.exe || return 1
+  # Build-platform dune from this source (released dune may reject its lang version)
+  if ! ocaml boot/bootstrap.ml; then
+    echo "ERROR: Failed to bootstrap native dune"
+    return 1
+  fi
+  cp -v _boot/dune.exe "${native_dune}" || return 1
+  "${native_dune}" --version
   if ! "${native_dune}" build @install -p dune --profile dune-bootstrap; then
     echo "ERROR: Failed to build install artifacts with native dune"
     return 1

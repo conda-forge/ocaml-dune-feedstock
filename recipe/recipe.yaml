@@ -1,9 +1,9 @@
 context:
-  build_number: 113
+  build_number: 114
   name: ocaml-dune
-  version: "3.24.2"
+  version: "3.25.0"
 
-  # ocaml_win-64 ships gcc_* and vs2022_* at the same version/build; name the track.
+  # ocaml_win-64 ships gcc_* and vs_* at the same version/build; name the track.
   c_toolchain: ${{ "" if unix else c_compiler ~ "_*" }}
   library: ${{ "Library/" if not unix else "" }}
   m2: ${{ "m2-" if not unix else "" }}
@@ -15,7 +15,7 @@ package:
 
 source:
   - url: https://github.com/ocaml/dune/archive/${{ version }}.tar.gz
-    sha256: 3c4facfef1bc1f96235808865665b94857e6e508ce346bfc36b53b775fd8423c
+    sha256: 0f4152d336a54785028d0b602a1a8056eceb4b8b2edf813ff1bd8e28de89a21e
     patches:
       - patches/0001-blake3-disable-neon-when-architecture-is-not-arm64.patch
 
@@ -34,30 +34,30 @@ build:
 requirements:
   build:
     - ${{ compiler("ocaml") }}
-    - if: not unix and c_compiler == "gcc"
-      then:
-        - ${{ stdlib("m2w64_c") }}
-      else:
-        - ${{ stdlib("c") }}
-    - if: not unix and c_compiler != "gcc"
-      then:
-        - ${{ compiler("c") }}
     - if: not unix
       then:
+        - if: c_compiler == "gcc"
+          then:
+            - ${{ stdlib("m2w64_c") }}
+          else:
+            - ${{ stdlib("c") }}
+            - if: c_compiler == "vs"
+              then:
+                - ${{ compiler("c") }}
+              else:
+                - ${{ c_compiler }}_${{ target_platform }}
         - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
-    - if: build_platform != target_platform and unix
-      then:
-        - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.*
-        # self-activating cross tree with ocaml_use_native/ocaml_use_cross
-        - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.*
-    - if: build_platform != target_platform and not unix
-      then:
-        - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
     - if: build_platform != target_platform
       then:
-        - ocaml-dune
+        - if: unix
+          then:
+            - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.*
+            # self-activating cross tree with ocaml_use_native/ocaml_use_cross
+            - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.*
+          else:
+            - ocaml_${{ build_platform }} ${{ ocaml_compiler_version }}.* gcc_*
     - if: unix
       then:
         - file
@@ -120,9 +120,12 @@ tests:
         - if: not unix
           then:
             - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
-        - if: not unix and c_compiler != "gcc"
-          then:
-            - ${{ compiler("c") }}
+            - if: c_compiler == "vs"
+              then:
+                - ${{ compiler("c") }}
+            - if: c_compiler == "zig"
+              then:
+                - ${{ c_compiler }}_${{ target_platform }}
 
 about:
   license: MIT
