@@ -1,5 +1,5 @@
 context:
-  build_number: 13
+  build_number: 14
   name: ocaml-dune
   version: "3.24.2"
 
@@ -41,8 +41,11 @@ requirements:
             - ${{ stdlib("m2w64_c") }}
           else:
             - ${{ stdlib("c") }}
-            - ${{ compiler("c") }}
+            - ${{ compiler("zig") if c_compiler == "zig" else c_compiler ~ "_" ~ target_platform }}
         - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+      else:
+        - ${{ stdlib("c") }}
+        - ${{ compiler("c") }}
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
     - if: build_platform != target_platform
@@ -119,7 +122,7 @@ tests:
             - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
             - if: c_compiler != "gcc"
               then:
-                - ${{ compiler("c") }}
+                - ${{ compiler("zig") if c_compiler == "zig" else c_compiler ~ "_" ~ target_platform }}
 
 about:
   license: MIT
