@@ -23,6 +23,38 @@ Current build status
       </a>
     </td>
   </tr>
+    
+  <tr>
+    <td>Azure</td>
+    <td>
+      <details>
+        <summary>
+          <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=27361&branchName=main">
+            <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocaml-dune-feedstock?branchName=main">
+          </a>
+        </summary>
+        <table>
+          <thead><tr><th>Variant</th><th>Status</th></tr></thead>
+          <tbody><tr>
+              <td>osx_64</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=27361&branchName=main">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocaml-dune-feedstock?branchName=main&jobName=osx&configuration=osx%20osx_64_" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>osx_arm64</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=27361&branchName=main">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/ocaml-dune-feedstock?branchName=main&jobName=osx&configuration=osx%20osx_arm64_" alt="variant">
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+    </td>
+  </tr>
 </table>
 
 Current release info
@@ -35,10 +67,10 @@ Current release info
 Installing ocaml-dune
 =====================
 
-Installing `ocaml-dune` from the `conda-forge/label/ocaml_vs` channel can be achieved by adding `conda-forge/label/ocaml_vs` to your channels with:
+Installing `ocaml-dune` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:
 
 ```
-conda config --add channels conda-forge/label/ocaml_vs
+conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
@@ -84,7 +116,7 @@ It is possible to list all of the versions of `ocaml-dune` available on your pla
 <summary>With conda</summary>
 
 ```
-conda search ocaml-dune --channel conda-forge/label/ocaml_vs
+conda search ocaml-dune --channel conda-forge
 ```
 
 </details>
@@ -93,7 +125,7 @@ conda search ocaml-dune --channel conda-forge/label/ocaml_vs
 <summary>With mamba</summary>
 
 ```
-mamba search ocaml-dune --channel conda-forge/label/ocaml_vs
+mamba search ocaml-dune --channel conda-forge
 ```
 
 </details>
@@ -102,7 +134,7 @@ mamba search ocaml-dune --channel conda-forge/label/ocaml_vs
 <summary>With pixi</summary>
 
 ```
-pixi search ocaml-dune --channel conda-forge/label/ocaml_vs
+pixi search ocaml-dune --channel conda-forge
 ```
 
 </details>
@@ -112,13 +144,13 @@ pixi search ocaml-dune --channel conda-forge/label/ocaml_vs
 
 ```
 # Search all versions available on your platform:
-mamba repoquery search ocaml-dune --channel conda-forge/label/ocaml_vs
+mamba repoquery search ocaml-dune --channel conda-forge
 
 # List packages depending on `ocaml-dune`:
-mamba repoquery whoneeds ocaml-dune --channel conda-forge/label/ocaml_vs
+mamba repoquery whoneeds ocaml-dune --channel conda-forge
 
 # List dependencies of `ocaml-dune`:
-mamba repoquery depends ocaml-dune --channel conda-forge/label/ocaml_vs
+mamba repoquery depends ocaml-dune --channel conda-forge
 ```
 
 </details>
