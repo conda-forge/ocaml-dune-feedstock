@@ -1,5 +1,5 @@
 context:
-  build_number: 114
+  build_number: 115
   name: ocaml-dune
   version: "3.25.0"
 
@@ -41,12 +41,11 @@ requirements:
             - ${{ stdlib("m2w64_c") }}
           else:
             - ${{ stdlib("c") }}
-            - if: c_compiler == "vs"
-              then:
-                - ${{ compiler("c") }}
-              else:
-                - ${{ c_compiler }}_${{ target_platform }}
+            - ${{ compiler("zig") if c_compiler == "zig" else compiler("c") }}
         - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
+      else:
+        - ${{ stdlib("c") }}
+        - ${{ compiler("c") }}
     - ${{ m2 }}bash >=5.2
     - ${{ m2 }}make
     - if: build_platform != target_platform
@@ -69,6 +68,9 @@ requirements:
         - zstd
   run_constraints:
     - ocaml_${{ target_platform }} >=${{ ocaml_compiler_version }} ${{ c_toolchain }}
+  run_exports:
+    strong_constraints:
+      - ${{ pin_subpackage('ocaml-dune', lower_bound='x.x', upper_bound=None) }}
   ignore_run_exports:
     by_name:
       - zstd
@@ -120,12 +122,9 @@ tests:
         - if: not unix
           then:
             - ocaml_${{ target_platform }} ${{ ocaml_compiler_version }}.* ${{ c_toolchain }}
-            - if: c_compiler == "vs"
+            - if: c_compiler != "gcc"
               then:
-                - ${{ compiler("c") }}
-            - if: c_compiler == "zig"
-              then:
-                - ${{ c_compiler }}_${{ target_platform }}
+                - ${{ compiler("zig") if c_compiler == "zig" else compiler("c") }}
 
 about:
   license: MIT
