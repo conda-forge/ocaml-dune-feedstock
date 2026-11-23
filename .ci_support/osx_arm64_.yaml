@@ -3,7 +3,7 @@ MACOSX_SDK_VERSION:
 c_compiler:
 - clang
 c_compiler_version:
-- '21'
+- '22'
 c_stdlib:
 - macosx_deployment_target
 c_stdlib_version:
@@ -17,7 +17,7 @@ macos_machine:
 ocaml_compiler:
 - ocaml
 ocaml_compiler_version:
-- 5.5.1
+- 5.5.2
 target_platform:
 - osx-arm64
 zstd:
